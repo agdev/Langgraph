@@ -1,5 +1,5 @@
 
-# 🔧 Built a Financial Agentic System: Combining Langgraph, GROQ, and APIs for Intelligent Financial Analysis
+# 🔧 Financial Agentic System: Combining Langgraph, GROQ, and APIs for Intelligent Financial Analysis
 
 Inspired by Hanane Dupouy's [project](https://github.com/hananedupouy/LLMs-in-Finance/tree/main/Agents/Anthropic)
 
