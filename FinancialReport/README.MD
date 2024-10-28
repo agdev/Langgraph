@@ -1,11 +1,12 @@
 
-🔧 Built a Financial Agentic System: Combining Langgraph, GROQ, and APIs for Intelligent Financial Analysis
+# 🔧 Built a Financial Agentic System: Combining Langgraph, GROQ, and APIs for Intelligent Financial Analysis
 
 Inspired by Hanane Dupouy's [project](https://github.com/hananedupouy/LLMs-in-Finance/tree/main/Agents/Anthropic)
 
 The purpose of this project is to show practical usage of current (2024) AI technologies  
 
-🎯 What I Built:
+
+# 🎯 What I Built:
 
 A financial reporting system that intelligently gathers:
 
@@ -17,7 +18,7 @@ A financial reporting system that intelligently gathers:
 
 
 
-⚙️ Technical Stack:
+# ⚙️ Technical Stack:
 
 • Langgraph for orchestration
 
@@ -27,7 +28,7 @@ A financial reporting system that intelligently gathers:
 
 
 
-💡 Key Innovations:
+# 💡 Key Innovations:
 
 1. Full control over the agentic execution sequence
 
