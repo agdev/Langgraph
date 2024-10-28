@@ -37,8 +37,6 @@ A financial reporting system that intelligently gathers:
 
 4. LLM-provider agnostic architecture
 
-
+![graphical representation of agentic flow](financial_data_report_graph.png)
 
 #FinancialTech #GenerativeAI #LLM #SoftwareEngineering #Innovation
-
-![graphical representation of agentic flow](financial_data_report_graph.png)
