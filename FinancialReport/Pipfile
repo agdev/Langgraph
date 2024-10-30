@@ -10,6 +10,7 @@ langgraph = "*"
 langchain-anthropic = "*"
 langchain-groq = "*"
 langchain-openai = "*"
+langchain-core = "*"
 
 [dev-packages]
 
