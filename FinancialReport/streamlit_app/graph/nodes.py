@@ -89,4 +89,3 @@ def is_there_symbol(state: GraphState):
     return False
 
   return True
-

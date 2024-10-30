@@ -23,3 +23,4 @@ class GraphState(TypedDict):
   extraction_chain: Any
   error: str
   fmp_api_key: str
+

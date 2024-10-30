@@ -50,3 +50,4 @@ def get_stock_price(symbol:str, api_key: str) -> Union[StockPrice, None]:
 #   'earningsAnnouncement': '2024-10-31T00:00:00.000+0000',
 #   'sharesOutstanding': 15204100000,
 #   'timestamp': 1726257601}]
+
