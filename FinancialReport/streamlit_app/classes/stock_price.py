@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 import requests
 from datetime import datetime
+from typing import Union
+
 class StockPrice(BaseModel):
     symbol:str = Field(description="The symbol of the company")
     price:float = Field(description="The price of the company")
@@ -11,18 +13,19 @@ class StockPrice(BaseModel):
     pe:float = Field(description="The PE of the company")
     earningsAnnouncement:datetime = Field(description="The earnings announcement of the company")
 # Define the functions that will fetch financial data
-def get_stock_price(symbol):
+def get_stock_price(symbol:str, api_key: str) -> Union[StockPrice, None]:
     """
     Fetch the current stock price for the given symbol, the current volume, the average price 50d and 200d, EPS, PE and the next earnings Announcement.
     """
     try:
-      url = f"https://financialmodelingprep.com/api/v3/quote-order/{symbol}?apikey={FINANCIAL_MODELING_PREP_API_KEY}"
+      url = f"https://financialmodelingprep.com/api/v3/quote-order/{symbol}?apikey={api_key}"
       response = requests.get(url)
       data = response.json()
       stock_price = StockPrice(**data[0])
       return stock_price
     except (IndexError, KeyError):
-        return {"error": f"Could not fetch price for symbol: {symbol}"}
+        print ("Error:",f"Could not fetch price for symbol: {symbol}")
+        return None
 
 ## DATA PROVIDED BY THIS ENDPOINT:
 # [{'symbol': 'AAPL',

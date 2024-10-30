@@ -1,5 +1,9 @@
 import streamlit as st
-
+from chain.extraction_chain import get_extraction_chain
+from classes.config import Config
+from methods.util import get_llm
+from graph.work_flow import compiled_graph
+from typing import Any
 import os
 
 def initialize_session_state():
@@ -7,8 +11,8 @@ def initialize_session_state():
         st.session_state.messages = []
     if "selected_provider" not in st.session_state:
         st.session_state.selected_provider = None
-    if "api_keys_set" not in st.session_state:
-        st.session_state.api_keys_set = False
+    if "config" not in st.session_state:
+        st.session_state.config = None
 
 def set_api_keys():
     # API Key input section
@@ -37,26 +41,16 @@ def set_api_keys():
     if st.sidebar.button("Save API Keys"):
         if llm_api_key and fmp_api_key:
             # Store API keys in session state
-            st.session_state.llm_api_key = llm_api_key
-            st.session_state.fmp_api_key = fmp_api_key
-            st.session_state.selected_provider = provider
-            st.session_state.api_keys_set = True
+            config = Config(llm_api_key, fmp_api_key, provider)
+            st.session_state.config= config
             st.sidebar.success("API keys saved successfully!")
         else:
             st.sidebar.error("Please enter both API keys")
 
-def get_graph_response(prompt, provider, api_key):
-    if provider == "OpenAI":
-       # implement OpenAI provider
-        return response
-    elif provider == "Anthropic":
-        # implement Anthropic provider
-        return response
-    elif provider == "Groq":
-        # implement Groq provider
-        return response
-    # Add other provider implementations as needed
-    return None
+def get_graph_response(prompt: str, extraction_chain: Any, fmp_api_key: str):
+
+    result = compiled_graph.invoke({'request': prompt, 'extraction_chain': extraction_chain, 'fmp_api_key': fmp_api_key})
+    return result['report_md']
 
 def main():
     st.title("Financial Data Assistant")
@@ -69,6 +63,10 @@ def main():
     
     # Chat interface
     if st.session_state.api_keys_set:
+        if 'extraction_chain' not in st.session_state:
+            llm = get_llm(st.session_state.config)
+            extraction_chain = get_extraction_chain(llm)
+            st.session_state.extraction_chain = extraction_chain
         # Display chat history
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
@@ -87,8 +85,8 @@ def main():
             with st.chat_message("assistant"):
                 stream = get_graph_response(
                     prompt,
-                    st.session_state.selected_provider,
-                    st.session_state.llm_api_key
+                    st.session_state.extraction_chain,
+                    st.session_state.config.fmp_api_key
                 )
                 response = st.write_stream(stream)
                 st.session_state.messages.append({"role": "assistant", "content": response})
@@ -96,4 +94,4 @@ def main():
         st.info("Please configure your API keys in the sidebar to start chatting.")
 
 if __name__ == "__main__":
-    main() 
+    main()

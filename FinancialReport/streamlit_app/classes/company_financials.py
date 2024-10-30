@@ -1,8 +1,11 @@
 from pydantic import BaseModel, Field
 import requests
-from typing import Tuple, Any
+from typing import Union
 
 class CompanyFinancials(BaseModel):
+    """
+    A class that represents the company financials.
+    """
     symbol:str =  Field(description="The symbol of the company")
     companyName:str =  Field(description="The name of the company")
     marketCap:float = Field(alias="mktCap", description="The market capitalization of the company")
@@ -12,18 +15,19 @@ class CompanyFinancials(BaseModel):
     beta:float = Field(description="The beta of the company")
     price:float = Field(description="The price of the company")
 
-def get_company_financials(symbol) -> Tuple[Any, CompanyFinancials]:
+def get_company_financials(symbol, api_key: str) -> Union[CompanyFinancials, None]:
     """
     Fetch basic financial information for the given company symbol such as the industry, the sector, the name of the company, and the market capitalization.
     """
     try:
-      url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={FINANCIAL_MODELING_PREP_API_KEY}"
+      url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={api_key}"
       response = requests.get(url)
       data = response.json()
       financials = CompanyFinancials(**data[0])
       return financials
     except (IndexError, KeyError):
-        return {"error": f"Could not fetch financials for symbol: {symbol}"}
+        print ("Error:",f"Could not fetch financials for symbol: {symbol}")
+        return None
 
 ## DATA PROVIDED BY THIS ENDPOINT:
 # [{'symbol': 'AAPL',

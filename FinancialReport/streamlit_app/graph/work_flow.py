@@ -38,6 +38,9 @@ workflow.add_edge(ERROR_NODE, END)
 
 compiled_graph = workflow.compile()
 
+# def create_graph(extraction_chain: Any):
+#     graph = compiled_graph.bind(extraction_chain=extraction_chain)
+#     return graph
 # app.debug = True
 
-compiled_graph.get_graph().draw_mermaid_png(output_file_path="financial_data_report_graph.png")
+# compiled_graph.get_graph().draw_mermaid_png(output_file_path="financial_data_report_graph.png")

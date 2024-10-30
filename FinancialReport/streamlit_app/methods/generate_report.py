@@ -1,4 +1,9 @@
-def generate_markdown_report(company_financials: CompanyFinancials, income_statement: IncomeStatement, stock_price: StockPrice) -> str:
+from classes.company_financials import CompanyFinancials
+from classes.income_statement import IncomeStatement
+from classes.stock_price import StockPrice
+from typing import Optional
+
+def generate_markdown_report(company_financials: Optional[CompanyFinancials], income_statement: Optional[IncomeStatement], stock_price: Optional[StockPrice]) -> str:
     """
     Generates a markdown report from the GraphState instance.
     """
@@ -17,7 +22,7 @@ def generate_markdown_report(company_financials: CompanyFinancials, income_state
       - **Current Price**: ${company_financials.price: .2f}
       """ if (company_financials) else " No company financials were obtained"
 
-    income_statement = f"""
+    income_statement_str = f"""
     ## Income Statement (as of {income_statement.date_field})
     - **Revenue**: ${income_statement.revenue: .2f}
     - **Gross Profit**: ${income_statement.gross_profit: .2f}
@@ -27,7 +32,7 @@ def generate_markdown_report(company_financials: CompanyFinancials, income_state
     - **EPS (Diluted)**: {income_statement.eps_diluted: .2f}
     """ if income_statement else "No income statement was obtained"
 
-    stock_price = f"""
+    stock_price_str = f"""
       ## Stock Price Information
     - **Current Price**: ${stock_price.price: .2f}
     - **Volume**: {stock_price.volume: .2f}
@@ -41,8 +46,8 @@ def generate_markdown_report(company_financials: CompanyFinancials, income_state
     md_report = f"""
     {company_info}
 
-    {income_statement}
+    {income_statement_str}
 
-    {stock_price}
+    {stock_price_str}
     """
     return md_report

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
+from datetime import date
 import requests
-
+from typing import Union
 class IncomeStatement(BaseModel):
     date_field: date = Field(alias='date', description="The date of the income statement")
     revenue:float = Field(description="The revenue of the company")
@@ -11,18 +12,19 @@ class IncomeStatement(BaseModel):
     eps_diluted:float = Field(alias='epsdiluted', description="The EPS diluted of the company")
 
 
-def get_income_statement(symbol):
+def get_income_statement(symbol:str, api_key: str) -> Union[IncomeStatement, None]:
     """
     Fetch last income statement for the given company symbol such as revenue, gross profit, net income, EBITDA, EPS.
     """
     try:
-      url = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={FINANCIAL_MODELING_PREP_API_KEY}"
+      url = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={api_key}"
       response = requests.get(url)
       data = response.json()
       financials = IncomeStatement(**data[0])
       return financials
     except (IndexError, KeyError):
-        return {"error": f"Could not fetch financials for symbol: {symbol}"}
+        print ("Error:",f"Could not fetch financials for symbol: {symbol}")
+        return None
 
 ## DATA PROVIDED BY THIS ENDPOINT:
 # {'date': '2023-09-30',
