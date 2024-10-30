@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from ..methods.consts import UNKNOWN
 
