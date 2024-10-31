@@ -1,4 +1,4 @@
-from ..classes.config import Config
+from classes.config import Config
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 from langchain_anthropic import ChatAnthropic

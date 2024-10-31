@@ -1,10 +1,10 @@
-from ..graph.graph_state import GraphState
-from ..classes.income_statement import IncomeStatement, get_income_statement
-from ..classes.company_financials import CompanyFinancials, get_company_financials
-from ..classes.stock_price import StockPrice, get_stock_price
-from ..methods.consts import UNKNOWN
-from ..methods.generate_report import generate_markdown_report
-from ..chain.extraction_chain import Extraction
+from graph.graph_state import GraphState
+from classes.income_statement import IncomeStatement, get_income_statement
+from classes.company_financials import CompanyFinancials, get_company_financials
+from classes.stock_price import StockPrice, get_stock_price
+from methods.consts import UNKNOWN
+from methods.generate_report import generate_markdown_report
+from chain.extraction_chain import Extraction
 from typing import TypedDict
 
 def extraction_node(state: GraphState):
