@@ -1,6 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from ..methods.consts import UNKNOWN
+from methods.consts import UNKNOWN
 
 class Extraction(BaseModel):
     symbol: str = Field(description="The symbol of the company")

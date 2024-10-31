@@ -28,7 +28,10 @@ try:
     
     from langchain_openai import ChatOpenAI
     print_flush("✓ langchain_openai")
-    
+
+    from methods.consts import UNKNOWN
+    print_flush("✓ methods.consts")
+
     print_flush("\nAll imports successful!")
 
 except ImportError as e:
