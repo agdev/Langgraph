@@ -1,40 +1,34 @@
 from graph.graph_state import GraphState
 from graph.nodes import extraction_node, get_income_statement_node, get_company_financials_node, get_stock_price_node, error_node, generate_markdown_report_node, is_there_symbol
 from langgraph.graph import END, StateGraph
-
-EXTRACTION = 'Extraction'
-STOCK_PRICE = 'StockPrice'
-INCOME_STATEMENT ='IncomeStatement'
-COMPANY_FINANCIALS ='CompanyFinancials'
-ERROR_NODE='ErrorNode'
-REPORT = 'Report'
-PASS = 'Pass'
+from methods.consts import (
+    NODE_EXTRACTION, NODE_STOCK_PRICE, NODE_INCOME_STATEMENT,
+    NODE_COMPANY_FINANCIALS, NODE_ERROR, NODE_REPORT, NODE_PASS
+)
 
 workflow = StateGraph(GraphState)
-workflow.add_node(EXTRACTION, extraction_node)
-workflow.add_node(PASS, lambda state: state)
-workflow.add_node(INCOME_STATEMENT, get_income_statement_node)
-workflow.add_node(COMPANY_FINANCIALS, get_company_financials_node)
-workflow.add_node(STOCK_PRICE, get_stock_price_node)
-workflow.add_node(REPORT, generate_markdown_report_node)
-workflow.add_node(ERROR_NODE, error_node)
+workflow.add_node(NODE_EXTRACTION, extraction_node)
+workflow.add_node(NODE_PASS, lambda state: state)
+workflow.add_node(NODE_INCOME_STATEMENT, get_income_statement_node)
+workflow.add_node(NODE_COMPANY_FINANCIALS, get_company_financials_node)
+workflow.add_node(NODE_STOCK_PRICE, get_stock_price_node)
+workflow.add_node(NODE_REPORT, generate_markdown_report_node)
+workflow.add_node(NODE_ERROR, error_node)
 
-workflow.set_entry_point(EXTRACTION)
+workflow.set_entry_point(NODE_EXTRACTION)
 
-workflow.add_conditional_edges(EXTRACTION, is_there_symbol, {True:PASS, False: ERROR_NODE})
+workflow.add_conditional_edges(NODE_EXTRACTION, is_there_symbol, {True:NODE_PASS, False: NODE_ERROR})
 
+workflow.add_edge(NODE_PASS, NODE_INCOME_STATEMENT)
+workflow.add_edge(NODE_PASS, NODE_COMPANY_FINANCIALS)
+workflow.add_edge(NODE_PASS, NODE_STOCK_PRICE)
 
-workflow.add_edge(PASS,INCOME_STATEMENT)
-workflow.add_edge(PASS,COMPANY_FINANCIALS)
-workflow.add_edge(PASS,STOCK_PRICE)
+workflow.add_edge(NODE_INCOME_STATEMENT, NODE_REPORT)
+workflow.add_edge(NODE_COMPANY_FINANCIALS, NODE_REPORT)
+workflow.add_edge(NODE_STOCK_PRICE, NODE_REPORT)
 
-workflow.add_edge(INCOME_STATEMENT,REPORT)
-workflow.add_edge(COMPANY_FINANCIALS,REPORT)
-workflow.add_edge(STOCK_PRICE,REPORT)
-
-workflow.add_edge(REPORT, END)
-workflow.add_edge(ERROR_NODE, END)
-
+workflow.add_edge(NODE_REPORT, END)
+workflow.add_edge(NODE_ERROR, END)
 
 compiled_graph = workflow.compile()
 

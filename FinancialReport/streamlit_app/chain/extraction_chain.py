@@ -7,7 +7,7 @@ class Extraction(BaseModel):
 
 
 system = f"""You are very helpful Financial assistant.User will request financial data/information for a company.You are to return company's symbol on a stock market.
-            do not make anything up. if you do not know reply {UNKNOWN}.
+            do not make anything up. if you do not know reply {UNKNOWN} UPPER case.
 """
 
 extraction_prompt = ChatPromptTemplate.from_messages(

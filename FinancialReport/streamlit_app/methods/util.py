@@ -3,17 +3,25 @@ from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 from langchain_anthropic import ChatAnthropic
 from typing import Any
+from methods.consts import (
+    PROVIDER_OPENAI, PROVIDER_GROQ, PROVIDER_ANTHROPIC,
+    MODEL_OPENAI, MODEL_GROQ, MODEL_ANTHROPIC
+)
 
 def get_llm(config: Config)-> Any:
-    if config.provider == "openai":
-        return ChatOpenAI(api_key=config.llm_api_key, model="gpt-4o-mini")
-    elif config.provider == "groq":
-        return ChatGroq(api_key=config.llm_api_key, model="mixtral-8x7b-32768",
+    """
+    Get the LLM based on the provider and API key.
+    Supported providers: "Groq", "OpenAI", "Anthropic"
+    """
+    if config.provider == PROVIDER_OPENAI:
+        return ChatOpenAI(api_key=config.llm_api_key, model=MODEL_OPENAI)
+    elif config.provider == PROVIDER_GROQ:
+        return ChatGroq(api_key=config.llm_api_key, model=MODEL_GROQ,
                         temperature=0,
                         max_tokens=None,
                         timeout=None,
                         max_retries=2,)
-    elif config.provider == "anthropic":
-        return ChatAnthropic(api_key=config.llm_api_key, model_name='claude-3-sonnet-20240229', temperature=0.0)
+    elif config.provider == PROVIDER_ANTHROPIC:
+        return ChatAnthropic(api_key=config.llm_api_key, model_name=MODEL_ANTHROPIC, temperature=0.0)
     
     raise ValueError(f"Unsupported provider: {config.provider}")
