@@ -62,7 +62,7 @@ def main():
     set_api_keys()
     
     # Chat interface
-    if st.session_state.api_keys_set:
+    if st.session_state.config:
         if 'extraction_chain' not in st.session_state:
             llm = get_llm(st.session_state.config)
             extraction_chain = get_extraction_chain(llm)
