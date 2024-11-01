@@ -23,6 +23,10 @@ def initialize_session_state():
 
 def set_api_keys():
     st.sidebar.header(LABEL_API_CONFIG)
+    st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app 
+                        [here](https://github.com/agdev/Langgraph/tree/main/FinancialReport/streamlit_app).
+                        """)
+    
     
     provider = st.sidebar.selectbox(
         LABEL_SELECT_PROVIDER,
