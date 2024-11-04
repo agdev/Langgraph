@@ -23,7 +23,7 @@ def initialize_session_state():
 def set_api_keys():
     st.sidebar.header(LABEL_API_CONFIG)
     st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app 
-                        [here](https://github.com/agdev/Langgraph/tree/main/FinancialReport/streamlit_app).
+                        [here](https://github.com/agdev/Langgraph/tree/main/FinancialAssistant).
                         Financial Modeling Prep API key you can get it [here](https://financialmodelingprep.com/developer/docs/).
                         """)
     
