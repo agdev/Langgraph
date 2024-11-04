@@ -1,0 +1,8 @@
+[client]
+showErrorDetails = false
+
+[logger]
+# Level of logging for Streamlit's internal logger: "error", "warning",
+# "info", or "debug".
+# Default: "info"
+level = "debug"
