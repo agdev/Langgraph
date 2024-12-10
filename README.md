@@ -1,1 +1,1 @@
-This repository contains sample projects that show utilization of Langgraph to implement LLM Agents 
+# Collection of agentic implementatons using Langgraph
