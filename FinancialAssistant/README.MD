@@ -2,6 +2,8 @@
 
 Inspired by Hanane Dupouy's LLama Index agents implementation, I developed a flexible agentic system with complete control over the agent's execution sequence.
 
+You can try it [here](https://langgraph-sqtz5fcof3bdjce3w3gbun.streamlit.app/)
+
 # 🎯 What I Built:
 A financial reporting system that intelligently gathers:  
 • Real-time stock prices  
