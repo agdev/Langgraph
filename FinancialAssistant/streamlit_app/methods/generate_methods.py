@@ -44,8 +44,10 @@ def generate_markdown_report(company_financials: str| None, income_statement: st
     """
     Generates a markdown report from the GraphState instance.
     """
+    company_financials= company_financials if company_financials else "No company financials were obtained"
+    income_statement = income_statement if income_statement else "No income statement was obtained"
+    stock_price = stock_price if stock_price else "No stock price information was obtained"
     md_report = f"""
-
     {company_financials}
 
     {income_statement}
