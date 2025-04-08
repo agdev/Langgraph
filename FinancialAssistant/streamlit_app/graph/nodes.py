@@ -48,21 +48,27 @@ def create_symbol_extraction_node(llm):
 def get_income_statement_node(state: GraphState):
   print('get_income_statement_node')
   print('Symbol:', state[KEY_SYMBOL])
-  income_statement: IncomeStatement = get_income_statement(state[KEY_SYMBOL], state[KEY_FMP_API_KEY])
+  income_statement: IncomeStatement | None = get_income_statement(state[KEY_SYMBOL], state[KEY_FMP_API_KEY])
+  if income_statement is None:
+    return {KEY_INCOME_STATEMENT: None}
   result = generate_markdown_income_statement(income_statement)
   return {KEY_INCOME_STATEMENT: result}
 
 def get_company_financials_node(state: GraphState):
   print('get_company_financials_node')
   print('Symbol:', state[KEY_SYMBOL])
-  info: CompanyFinancials = get_company_financials(state[KEY_SYMBOL], state[KEY_FMP_API_KEY])
+  info: CompanyFinancials | None= get_company_financials(state[KEY_SYMBOL], state[KEY_FMP_API_KEY])
+  if info is None:
+    return {KEY_COMPANY_FINANCIALS: None}
   result = generate_markdown_financials(info)
   return {KEY_COMPANY_FINANCIALS: result}
 
 def get_stock_price_node(state: GraphState):
   print('get_stock_price_node')
   print('Symbol:', state[KEY_SYMBOL])
-  stock_price: StockPrice = get_stock_price(state[KEY_SYMBOL], state[KEY_FMP_API_KEY])
+  stock_price: StockPrice | None= get_stock_price(state[KEY_SYMBOL], state[KEY_FMP_API_KEY])
+  if stock_price is None:
+    return {KEY_STOCK_PRICE: None}
   result = generate_markdown_stock_price(stock_price)
   return {KEY_STOCK_PRICE: result}
 

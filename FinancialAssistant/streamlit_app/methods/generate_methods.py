@@ -40,7 +40,7 @@ def generate_markdown_stock_price(stock_price: StockPrice) -> str:
     - **Earnings Announcement**: {stock_price.earningsAnnouncement}
     """ if stock_price else "No stock price information was obtained"
 
-def generate_markdown_report(company_financials: str, income_statement: str, stock_price: str) -> str:
+def generate_markdown_report(company_financials: str| None, income_statement: str| None, stock_price: str| None) -> str:
     """
     Generates a markdown report from the GraphState instance.
     """
