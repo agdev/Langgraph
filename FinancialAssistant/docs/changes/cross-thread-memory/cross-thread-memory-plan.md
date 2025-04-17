@@ -181,7 +181,31 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
        return get_route_node
    ```
 
-4. **Add Summarization Node**:
+4. **Update Chat Node**:
+   ```python
+   def create_chat_node(llm, memory_manager):
+       chain = create_chat_chain(llm)
+
+       def chat_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+           # Get the user ID from the config
+           user_id = config["configurable"]["user_id"]
+
+           # Get conversation summary
+           summary = memory_manager.get_conversation_summary(user_id) or ""
+
+           # Create a context-enhanced request
+           context_request = state["request"]
+           if summary:
+               context_request = f"Context from previous conversations: {summary}\n\nCurrent request: {state['request']}"
+
+           # Invoke the chat chain with the enhanced context
+           result = chain.invoke({"request": context_request})
+
+           return {"chat_response": result.response}
+       return chat_node
+   ```
+
+5. **Add Summarization Node**:
    - Add the summarization node as the last node before the final answer
    - Connect it in the workflow to run after all other processing is complete
 
@@ -472,6 +496,7 @@ def create_workflow(llm):
     workflow.add_node(NODE_ROUTER, create_get_route_node(llm, memory_manager))
     workflow.add_node(NODE_SYMBOL_EXTRACTION_REPORT, create_symbol_extraction_node(llm, memory_manager))
     workflow.add_node(NODE_SYMBOL_EXTRACTION_ALONE, create_symbol_extraction_node(llm, memory_manager))
+    workflow.add_node(NODE_CHAT, create_chat_node(llm, memory_manager))  # Updated chat node with memory
 
     # Add the summarization node
     workflow.add_node(NODE_SUMMARIZE, create_summarization_node(llm, memory_manager))
@@ -484,7 +509,6 @@ def create_workflow(llm):
     workflow.add_node(NODE_INCOME_STATEMENT_STAND_ALONE, get_income_statement_node)
     workflow.add_node(NODE_COMPANY_FINANCIALS_STAND_ALONE, get_company_financials_node)
     workflow.add_node(NODE_STOCK_PRICE_STAND_ALONE, get_stock_price_node)
-    workflow.add_node(NODE_CHAT, create_chat_node(llm))
     workflow.add_node(NODE_FINAL_ANSWER, final_answer_node)
     workflow.add_node(NODE_GENERATE_REPORT, generate_markdown_report_node)
     workflow.add_node(NODE_ERROR, error_node)
@@ -563,9 +587,11 @@ Key benefits of this implementation include:
 
 2. **Improved Symbol Extraction**: The system will remember the last used symbol, allowing for more natural follow-up questions about the same company.
 
-3. **Enhanced Routing**: The router node will use conversation summaries to better understand the context of user requests.
+3. **Enhanced Routing and Chat**: Both the router and chat nodes will use conversation summaries to better understand the context of user requests, providing more coherent and contextually relevant responses.
 
-4. **Efficient Memory Management**: By summarizing conversations and storing only essential information, we prevent memory bloat while preserving context.
+4. **Comprehensive Context Awareness**: By integrating memory into multiple nodes (router, symbol extraction, and chat), we ensure that the entire system benefits from the conversation history.
+
+5. **Efficient Memory Management**: By summarizing conversations and storing only essential information, we prevent memory bloat while preserving context.
 
 This implementation follows best practices from Langchain Academy, particularly the approaches demonstrated in the memory store and conversation summarization modules. By focusing on the essential functionality of maintaining conversation context across different sessions, we've created a streamlined solution that can be easily extended in the future if needed.
 
