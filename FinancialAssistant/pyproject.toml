@@ -17,6 +17,11 @@ dependencies = [
     "langchain-groq",
     "langchain-openai",
     "langchain-core",
+    "pydantic>=2.0.0",
+    "requests",
+    "python-dotenv",
+    "pytest",
+    "pytest-mock",
 ]
 
 [project.optional-dependencies]
