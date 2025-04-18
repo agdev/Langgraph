@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from datetime import date
 import requests
 from typing import Union
@@ -12,12 +12,12 @@ class IncomeStatement(BaseModel):
     eps_diluted:float = Field(alias='epsdiluted', description="The EPS diluted of the company")
 
 
-def get_income_statement(symbol:str, api_key: str) -> Union[IncomeStatement, None]:
+def get_income_statement(symbol:str, api_key:SecretStr) -> Union[IncomeStatement, None]:
     """
     Fetch last income statement for the given company symbol such as revenue, gross profit, net income, EBITDA, EPS.
     """
     try:
-      url = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={api_key}"
+      url = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={api_key.get_secret_value()}"
       response = requests.get(url)
       data = response.json()
       financials = IncomeStatement(**data[0])

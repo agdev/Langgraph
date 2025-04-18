@@ -133,9 +133,9 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
 
 2. **Update Symbol Extraction Nodes**:
    ```python
-   def create_symbol_extraction_node(llm, memory_manager):
+   def create_symbol_extraction_node(llm):
        chain = create_extraction_chain(llm)
-       def symbol_extraction_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+       def symbol_extraction_node(state: GraphState, config: RunnableConfig, store: MemoryManager):
            # Get the user ID from the config
            user_id = config["configurable"]["user_id"]
 
@@ -160,12 +160,12 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
 
 3. **Update Router Node**:
    ```python
-   def create_get_route_node(llm, memory_manager):
+   def create_get_route_node(llm):
        # First, we need to update the route_chain.py to accept a conversation_summary parameter
        # Update the RouteResult class and prompt in route_chain.py
        chain = create_route_chain(llm)
 
-       def get_route_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+       def get_route_node(state: GraphState, config: RunnableConfig, store: MemoryManager):
            # Get the user ID from the config
            user_id = config["configurable"]["user_id"]
 
@@ -184,12 +184,12 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
 
 4. **Update Chat Node**:
    ```python
-   def create_chat_node(llm, memory_manager):
+   def create_chat_node(llm):
        # First, we need to update the chat_chain.py to accept a conversation_summary parameter
        # Update the ChatPromptTemplate in chat_chain.py
        chain = create_chat_chain(llm)
 
-       def chat_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+       def chat_node(state: GraphState, config: RunnableConfig, store: MemoryManager):
            # Get the user ID from the config
            user_id = config["configurable"]["user_id"]
 
@@ -251,7 +251,7 @@ def create_summarization_chain(llm):
     # Create the chain using the pipe operator
     return summarization_prompt | llm.with_structured_output(SummarizationResult)
 
-def summarize_conversation_node(state: GraphState, config: RunnableConfig, store: BaseStore, summarization_chain):
+def summarize_conversation_node(state: GraphState, config: RunnableConfig, store: MemoryManager, summarization_chain):
     """
     Summarizes the conversation and updates the summary in the memory manager.
     This node should be placed right before the final answer node.
@@ -493,9 +493,8 @@ from graph.graph_state import GraphState
 from methods.memory_manager import MemoryManager
 from chains.summarization_chain import create_summarization_chain
 from langchain_core.runnables.config import RunnableConfig
-from langgraph.store.base import BaseStore
 
-def create_summarization_node(llm, memory_manager):
+def create_summarization_node(llm):
     """
     Creates a node for summarizing conversations and updating memory.
     This node should be placed right before the final answer node.
@@ -503,7 +502,7 @@ def create_summarization_node(llm, memory_manager):
     # Create the summarization chain
     summarization_chain = create_summarization_chain(llm)
 
-    def summarization_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+    def summarization_node(state: GraphState, config: RunnableConfig, store: MemoryManager):
         """
         Summarizes the conversation and updates the summary in the memory manager.
         """
@@ -563,14 +562,38 @@ memory_manager = MemoryManager()
 def create_workflow(llm):
     workflow = StateGraph(GraphState)
 
-    # Create nodes with memory manager
-    workflow.add_node(NODE_ROUTER, create_get_route_node(llm, memory_manager))
-    workflow.add_node(NODE_SYMBOL_EXTRACTION_REPORT, create_symbol_extraction_node(llm, memory_manager))
-    workflow.add_node(NODE_SYMBOL_EXTRACTION_ALONE, create_symbol_extraction_node(llm, memory_manager))
-    workflow.add_node(NODE_CHAT, create_chat_node(llm, memory_manager))  # Updated chat node with memory
+    # Create node factories
+    router_node_factory = create_get_route_node(llm)
+    symbol_extraction_node_factory = create_symbol_extraction_node(llm)
+    chat_node_factory = create_chat_node(llm)
+    summarization_node_factory = create_summarization_node(llm, memory_manager)
 
-    # Add the summarization node
-    workflow.add_node(NODE_SUMMARIZE, create_summarization_node(llm, memory_manager))
+    # Create wrapper functions that only take state parameter
+    # These wrappers are needed because StateGraph expects functions that only take a state parameter,
+    # but our node functions need config and store parameters to access the user_id and memory
+    def router_node(state):
+        # The user_id is passed in the config when invoking the workflow
+        # We don't need to extract it from the state
+        return router_node_factory(state, None, memory_manager)
+
+    def symbol_extraction_report_node(state):
+        return symbol_extraction_node_factory(state, None, memory_manager)
+
+    def symbol_extraction_alone_node(state):
+        return symbol_extraction_node_factory(state, None, memory_manager)
+
+    def chat_node(state):
+        return chat_node_factory(state, None, memory_manager)
+
+    def summarization_node(state):
+        return summarization_node_factory(state, None, memory_manager)
+
+    # Add nodes to workflow
+    workflow.add_node(NODE_ROUTER, router_node)
+    workflow.add_node(NODE_SYMBOL_EXTRACTION_REPORT, symbol_extraction_report_node)
+    workflow.add_node(NODE_SYMBOL_EXTRACTION_ALONE, symbol_extraction_alone_node)
+    workflow.add_node(NODE_CHAT, chat_node)
+    workflow.add_node(NODE_SUMMARIZE, summarization_node)
 
     # Add other existing nodes
     workflow.add_node(NODE_PASS, lambda state: state)

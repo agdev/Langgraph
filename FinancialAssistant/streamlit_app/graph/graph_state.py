@@ -1,6 +1,6 @@
 from typing import TypedDict, Any
 
-class GraphState(TypedDict):
+class GraphState(TypedDict, total=False):
   """
      Represents the state of our graph.
 

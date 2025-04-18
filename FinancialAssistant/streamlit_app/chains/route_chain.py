@@ -22,6 +22,8 @@ You are a highly knowledgeable Financial Assistant, designed to analyze and cate
 
 If the intent isn't clear or doesn't match any specific category, use **chat**.
 
+If there is a conversation summary available, use it to provide context for understanding the user's request. For example, if the summary mentions the user was previously asking about Apple's financials, and the current request is "What about their stock price?", you should route to **stock_price** since the context helps clarify the intent.
+
 **Examples:**
 
 1. **Stock Price Requests**
@@ -39,7 +41,7 @@ If the intent isn't clear or doesn't match any specific category, use **chat**.
 3. **Company Financials Requests**
    - "What are the financials for Google?"
      **company_financials**
-   - "Show me Apple’s financial position."
+   - "Show me Apple's financial position."
      **company_financials**
 
 4. **Report Requests**
@@ -58,7 +60,7 @@ If the intent isn't clear or doesn't match any specific category, use **chat**.
 route_prompt = ChatPromptTemplate.from_messages(
      [
         ("system", system_route),
-        ("human", "{request}"),
+        ("human", "Conversation summary: {conversation_summary}\n\nUser request: {request}"),
     ]
 )
 

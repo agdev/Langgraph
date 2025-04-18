@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 import requests
 from typing import Union
 
@@ -15,12 +15,12 @@ class CompanyFinancials(BaseModel):
     beta:float = Field(description="The beta of the company")
     price:float = Field(description="The price of the company")
 
-def get_company_financials(symbol, api_key: str) -> Union[CompanyFinancials, None]:
+def get_company_financials(symbol, api_key: SecretStr) -> Union[CompanyFinancials, None]:
     """
     Fetch basic financial information for the given company symbol such as the industry, the sector, the name of the company, and the market capitalization.
     """
     try:
-      url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={api_key}"
+      url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={api_key.get_secret_value()}"
       response = requests.get(url)
       data = response.json()
       financials = CompanyFinancials(**data[0])

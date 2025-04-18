@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "financial-assistant"
+version = "0.1.0"
+description = "A financial assistant application using LangGraph"
+readme = "README.MD"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = [
+    "streamlit",
+    "langchain",
+    "langgraph>=0.3.0",  # Updated to latest version
+    "langchain-anthropic",
+    "langchain-groq",
+    "langchain-openai",
+    "langchain-core",
+]
+
+[project.optional-dependencies]
+dev = [
+    "debugpy",
+]
+
+[tool.uv]
+default-groups = ["default"]

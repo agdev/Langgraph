@@ -1,0 +1,8 @@
+streamlit
+langchain
+langgraph>=0.3.0
+langchain-anthropic
+langchain-groq
+langchain-openai
+langchain-core
+debugpy

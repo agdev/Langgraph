@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 import requests
 from datetime import datetime
 from typing import Union
@@ -13,12 +13,12 @@ class StockPrice(BaseModel):
     pe:float = Field(description="The PE of the company")
     earningsAnnouncement:datetime = Field(description="The earnings announcement of the company")
 # Define the functions that will fetch financial data
-def get_stock_price(symbol:str, api_key: str) -> Union[StockPrice, None]:
+def get_stock_price(symbol:str, api_key: SecretStr) -> Union[StockPrice, None]:
     """
     Fetch the current stock price for the given symbol, the current volume, the average price 50d and 200d, EPS, PE and the next earnings Announcement.
     """
     try:
-      url = f"https://financialmodelingprep.com/api/v3/quote-order/{symbol}?apikey={api_key}"
+      url = f"https://financialmodelingprep.com/api/v3/quote-order/{symbol}?apikey={api_key.get_secret_value()}"
       response = requests.get(url)
       data = response.json()
       stock_price = StockPrice(**data[0])

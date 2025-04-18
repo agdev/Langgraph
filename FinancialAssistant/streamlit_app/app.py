@@ -1,8 +1,11 @@
 import streamlit as st
+import uuid
 from classes.config import Config
 from methods.util import get_llm
 from graph.work_flow import create_workflow
 from typing import Any
+from pydantic import SecretStr
+from methods.memory_manager import MemoryManager
 from consts.consts import (
     STATE_MESSAGES, STATE_SELECTED_PROVIDER, STATE_CONFIG,
     PROVIDER_GROQ, PROVIDER_OPENAI, PROVIDER_ANTHROPIC,
@@ -19,46 +22,56 @@ def initialize_session_state():
         st.session_state.selected_provider = None
     if STATE_CONFIG not in st.session_state:
         st.session_state.config = None
+    if 'user_id' not in st.session_state:
+        # Generate a unique user ID for this session
+        st.session_state.user_id = str(uuid.uuid4())
+    if 'memory_manager' not in st.session_state:
+
+        st.session_state.memory_manager = MemoryManager()
 
 def set_api_keys():
     st.sidebar.header(LABEL_API_CONFIG)
-    st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app 
+    st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app
                         [here](https://github.com/agdev/Langgraph/tree/main/FinancialAssistant).
                         Financial Modeling Prep API key you can get it [here](https://financialmodelingprep.com/developer/docs/).
                         """)
-    
-    
+
+
     provider = st.sidebar.selectbox(
         LABEL_SELECT_PROVIDER,
         [PROVIDER_GROQ, PROVIDER_OPENAI, PROVIDER_ANTHROPIC],
         key="provider_select"
     )
-    
+
     llm_api_key = st.sidebar.text_input(
         f"{provider} {LABEL_API_KEY}",
         type="password",
         key="llm_api_key"
     )
-    
+
     fmp_api_key = st.sidebar.text_input(
         LABEL_FMP_API_KEY,
         type="password",
         key="fmp_api_key"
     )
-    
+
     if st.sidebar.button(LABEL_SAVE_KEYS):
         if llm_api_key and fmp_api_key:
-            config = Config(llm_api_key, fmp_api_key, provider)
+            config = Config(SecretStr(llm_api_key), SecretStr(fmp_api_key), provider)
             st.session_state.config = config
             st.sidebar.success(MSG_API_KEYS_SAVED)
         else:
             st.sidebar.error(MSG_ENTER_BOTH_KEYS)
 
-def get_graph_response(compiled_graph: Any, prompt: str, fmp_api_key: str, thread_id: int):
+def get_graph_response(compiled_graph: Any, prompt: str, fmp_api_key: SecretStr, thread_id: int, user_id: str):
     result = compiled_graph.invoke({
         KEY_REQUEST: prompt,
-        KEY_FMP_API_KEY: fmp_api_key
-    },config={"configurable": {"thread_id": str(thread_id)}})
+        "user_id": user_id  # Pass the user_id in the state
+    }, config={"configurable": {
+        "thread_id": str(thread_id),
+        "user_id": user_id,  # Also pass the user_id in the config
+        KEY_FMP_API_KEY: fmp_api_key,
+    }})
 
     return result['final_answer']
 
@@ -72,13 +85,13 @@ def main():
 
 
         st.title("Financial Data Assistant")
-        
+
         # Initialize session state
         initialize_session_state()
-        
+
         # Setup API keys section
         set_api_keys()
-        
+
         # Chat interface
         if st.session_state.config:
             if 'compiled_graph' not in st.session_state:
@@ -93,29 +106,31 @@ def main():
             for message in st.session_state.messages:
                 with st.chat_message(message[KEY_ROLE]):
                     st.markdown(message[KEY_CONTENT])
-            
+
             # Chat input
             if prompt := st.chat_input("Enter your financial data request"):
                 # Add user message to chat history
                 st.session_state.messages.append({
-                    KEY_ROLE: ROLE_USER, 
+                    KEY_ROLE: ROLE_USER,
                     KEY_CONTENT: prompt
                 })
-                
+
                 # Display user message
                 with st.chat_message(ROLE_USER):
                     st.markdown(prompt)
-                
+
                 # Get and display assistant response
                 with st.chat_message(ROLE_ASSISTANT):
-                    response = get_graph_response(st.session_state.compiled_graph,
-                        prompt,                        
+                    response = get_graph_response(
+                        st.session_state.compiled_graph,
+                        prompt,
                         st.session_state.config.fmp_api_key,
-                        st.session_state.thread_id
+                        st.session_state.thread_id,
+                        st.session_state.user_id
                     )
                     st.markdown(response)
                     st.session_state.messages.append({
-                        KEY_ROLE: ROLE_ASSISTANT, 
+                        KEY_ROLE: ROLE_ASSISTANT,
                         KEY_CONTENT: response
                     })
             else:

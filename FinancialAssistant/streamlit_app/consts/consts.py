@@ -7,7 +7,7 @@ UNKNOWN = 'UNKNOWN'
 
 # Provider names
 PROVIDER_GROQ = "Groq"
-PROVIDER_OPENAI = "OpenAI" 
+PROVIDER_OPENAI = "OpenAI"
 PROVIDER_ANTHROPIC = "Anthropic"
 
 # Model names
@@ -33,6 +33,7 @@ NODE_INCOME_STATEMENT_STAND_ALONE = 'IncomeStatementStandAlone'
 NODE_COMPANY_FINANCIALS_STAND_ALONE = 'CompanyFinancialsStandAlone'
 NODE_CHAT = 'ChatNode'
 NODE_FINAL_ANSWER = 'FinalAnswer'
+NODE_SUMMARIZE = 'SummarizeNode'
 
 # Session state keys
 STATE_MESSAGES = "messages"
@@ -58,7 +59,7 @@ KEY_REPORT_MD = "report_md"
 KEY_FMP_API_KEY = "fmp_api_key"
 KEY_ROLE = "role"
 KEY_CONTENT = "content"
-
+KEY_CONFIG = "configurable"
 # State keys
 KEY_COMPANY_FINANCIALS = "company_financials"
 KEY_INCOME_STATEMENT = "income_statement"
