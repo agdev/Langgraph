@@ -56,21 +56,21 @@ def final_answer_node(state: GraphState):
         else:
             result_data = state.get(KEY_INCOME_STATEMENT) or ""
             symbol: str = state.get(KEY_SYMBOL) or UNKNOWN
-            result = f"# Income statement for ({symbol}) \\n" + result_data
+            result = f"# Income statement for ({symbol}) \n" + result_data
     elif category == 'company_financials':
         if KEY_ERROR in state:
             result = state[KEY_ERROR]
         else:
             result_data = state.get(KEY_COMPANY_FINANCIALS) or ""
             symbol: str = state.get(KEY_SYMBOL) or UNKNOWN
-            result = f"# Company financials for ({symbol}) \\n" + result_data
+            result = f"# Company financials for ({symbol}) \n" + result_data
     elif category == 'stock_price':
         if KEY_ERROR in state:
             result = state[KEY_ERROR]
         else:
             result_data = state.get(KEY_STOCK_PRICE) or ""
             symbol: str = state.get(KEY_SYMBOL) or UNKNOWN
-            result = f"# Stock Price for ({symbol}) \\n" + result_data
+            result = f"# Stock Price for ({symbol}) \n" + result_data
     elif category == 'chat':
         result = state.get(KEY_CHAT_RESPONSE) or "No response available"
     elif category == 'report':
