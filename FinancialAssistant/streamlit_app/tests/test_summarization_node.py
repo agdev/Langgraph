@@ -4,7 +4,7 @@ Unit tests for the summarization node.
 
 import pytest
 from graph.graph_state import GraphState
-from graph.summarization_node import create_summarization_node
+from graph.nodes.summarization_node import create_summarization_node
 from chains.summarization_chain import SummarizationResult
 
 
@@ -85,7 +85,7 @@ def test_summarization_node_execution(mocker, mock_llm, memory_manager, test_sta
     Test that the summarization node executes correctly.
     """
     # Patch the create_summarization_chain function
-    mocker.patch('graph.summarization_node.create_summarization_chain', return_value=mock_summarization_chain)
+    mocker.patch('graph.nodes.summarization_node.create_summarization_chain', return_value=mock_summarization_chain)
 
     # Create the node
     node = create_summarization_node(mock_llm)
@@ -118,7 +118,7 @@ def test_summarization_node_without_symbol(mocker, mock_llm, memory_manager, tes
         "final_answer": "Some of the best tech stocks include Apple, Microsoft, and Google."
     })
     # Patch the create_summarization_chain function
-    mocker.patch('graph.summarization_node.create_summarization_chain', return_value=mock_summarization_chain)
+    mocker.patch('graph.nodes.summarization_node.create_summarization_chain', return_value=mock_summarization_chain)
 
     # Create the node
     node = create_summarization_node(mock_llm)

@@ -30,18 +30,52 @@ def initialize_session_state():
         st.session_state.memory_manager = MemoryManager()
 
 def set_api_keys():
-    st.sidebar.header(LABEL_API_CONFIG)
-    st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app
-                        [here](https://github.com/agdev/Langgraph/tree/main/FinancialAssistant).
-                        Financial Modeling Prep API key you can get it [here](https://financialmodelingprep.com/developer/docs/).
-                        """)
-
-
+    # Get the currently selected provider from the selectbox
     provider = st.sidebar.selectbox(
         LABEL_SELECT_PROVIDER,
         [PROVIDER_GROQ, PROVIDER_OPENAI, PROVIDER_ANTHROPIC],
         key="provider_select"
     )
+
+    # Check if provider has changed
+    provider_changed = False
+    if STATE_SELECTED_PROVIDER in st.session_state and st.session_state.selected_provider != provider:
+        provider_changed = True
+        # Reset the compiled graph when provider changes
+        if 'compiled_graph' in st.session_state:
+            del st.session_state.compiled_graph
+        # Reset the config when provider changes
+        st.session_state.config = None
+
+    # Update the selected provider
+    st.session_state.selected_provider = provider
+
+    # If config is already set and provider hasn't changed, don't do anything else
+    if st.session_state.config is not None and not provider_changed:
+        return
+
+    # Try to load config from environment variables for the selected provider
+    from utils.config_loader import create_config_from_env
+    env_config = create_config_from_env(provider)
+
+    # If config was loaded from environment, set it and return
+    if env_config is not None:
+        # Set the config
+        st.session_state.config = env_config
+
+        # Reset the compiled graph to force recompilation with the new provider
+        if 'compiled_graph' in st.session_state:
+            del st.session_state.compiled_graph
+
+        st.sidebar.success(f"API keys for {provider} loaded from environment variables")
+        return
+
+    # Otherwise, show the API key input UI
+    st.sidebar.header(LABEL_API_CONFIG)
+    st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app
+                        [here](https://github.com/agdev/Langgraph/tree/main/FinancialAssistant).
+                        Financial Modeling Prep API key you can get it [here](https://financialmodelingprep.com/developer/docs/).
+                        """)
 
     llm_api_key = st.sidebar.text_input(
         f"{provider} {LABEL_API_KEY}",
@@ -59,6 +93,11 @@ def set_api_keys():
         if llm_api_key and fmp_api_key:
             config = Config(SecretStr(llm_api_key), SecretStr(fmp_api_key), provider)
             st.session_state.config = config
+
+            # Reset the compiled graph to force recompilation with the new provider
+            if 'compiled_graph' in st.session_state:
+                del st.session_state.compiled_graph
+
             st.sidebar.success(MSG_API_KEYS_SAVED)
         else:
             st.sidebar.error(MSG_ENTER_BOTH_KEYS)
@@ -133,8 +172,8 @@ def main():
                         KEY_ROLE: ROLE_ASSISTANT,
                         KEY_CONTENT: response
                     })
-            else:
-                st.info(MSG_CONFIGURE_API)
+        else:
+            st.info(MSG_CONFIGURE_API)
     except Exception as e:
         st.error(f"An error occurred: {e}")
 

@@ -9,15 +9,19 @@ from consts.consts import (
     NODE_SUMMARIZE  # Added summarize node constant
 )
 from graph.graph_state import GraphState
-from graph.nodes import get_income_statement_node, get_company_financials_node, get_stock_price_node, error_node, generate_markdown_report_node, is_there_symbol, create_get_route_node, create_chat_node, where_to, where_to_alone, final_answer_node, create_symbol_extraction_node
+from graph.nodes import (
+    get_income_statement_node, get_company_financials_node, get_stock_price_node,
+    error_node, generate_markdown_report_node, is_there_symbol,
+    create_get_route_node, create_chat_node, where_to, where_to_alone,
+    final_answer_node, create_symbol_extraction_node, create_summarization_node
+)
 from methods.memory_manager import MemoryManager
-from graph.summarization_node import create_summarization_node
 
 def create_workflow(llm):
     # Create a global memory manager instance
     memory_manager = MemoryManager()
 
-    workflow = StateGraph(GraphState)  
+    workflow = StateGraph(GraphState)
 
     # Add nodes to workflow
     workflow.add_node(NODE_ROUTER, create_get_route_node(llm))#
@@ -91,10 +95,7 @@ def create_workflow(llm):
 
     # Compile with both within-thread and across-thread memory
     app = workflow.compile(checkpointer=within_thread_memory, store=memory_manager)
+    app.get_graph().draw_mermaid_png(output_file_path="financial_data_report_graph.png")
     return app
-# def create_graph(extraction_chain: Any):
-#     graph = compiled_graph.bind(extraction_chain=extraction_chain)
-#     return graph
-# app.debug = True
 
-# compiled_graph.get_graph().draw_mermaid_png(output_file_path="financial_data_report_graph.png")
+
