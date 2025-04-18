@@ -102,6 +102,18 @@ The application uses two types of memory:
      - Conversation summaries: Concise summaries of past conversations
      - Last used symbols: The most recently mentioned financial symbols
    - Identified by the user_id
+   - Uses namespaced key-value storage with the following structure:
+     ```python
+     # For conversation summaries
+     namespace = (user_id, "memories")
+     key = "conversation_summary"
+     value = {"summary": "User asked about Apple stock price"}
+
+     # For last used symbols
+     namespace = (user_id, "memories")
+     key = "last_symbol"
+     value = {"symbol": "AAPL"}
+     ```
 
 ## User ID and Thread ID Management
 
@@ -122,7 +134,7 @@ The application uses two types of memory:
 Each node in the workflow follows a similar pattern:
 
 1. **Factory Function** (e.g., `create_symbol_extraction_node`):
-   - Takes the LLM and sometimes the memory_manager as parameters
+   - Takes the LLM as a parameter
    - Creates any necessary chains
    - Returns a node function
 
@@ -132,6 +144,7 @@ Each node in the workflow follows a similar pattern:
      - `config`: Configuration including user_id and thread_id
      - `store`: The memory store for accessing cross-thread memory
    - Processes the state based on its specific functionality
+   - Accesses memory through the `store` parameter (which is of type `MemoryManager`)
    - Returns updates to the state
 
 3. **Wrapper Function** (in `work_flow.py`):
@@ -164,12 +177,31 @@ The config parameter is used in two ways:
 The summarization node is a key component for maintaining conversation context:
 
 1. It receives the state after the final answer has been generated
-2. It retrieves the existing conversation summary from memory
-3. It creates a new summary that incorporates the current request and response
-4. It updates the conversation summary in memory
-5. If a symbol was used in the conversation, it updates the last symbol in memory
+2. It retrieves the existing conversation summary from memory using the `get_conversation_summary` method
+3. It creates a new summary that incorporates the current request and response using a specialized summarization chain
+4. It updates the conversation summary in memory using the `update_conversation_summary` method
+5. If a symbol was used in the conversation, it updates the last symbol in memory using the `update_last_symbol` method
 
-This summary is then used by other nodes (router, chat) to provide context for future requests, enabling more coherent and personalized responses.
+The summarization chain uses a specialized prompt that instructs the LLM to focus on key financial aspects:
+
+```python
+system_template = """
+You are an AI assistant tasked with summarizing financial conversations.
+
+Based on the conversation and any existing summary, create a concise summary
+that captures the key points of the conversation, focusing on:
+- Financial questions asked by the user
+- Specific companies or symbols mentioned
+- Types of financial information requested (stock prices, income statements, etc.)
+- Any preferences expressed by the user
+"""
+```
+
+This summary is then used by other nodes (router, chat) to provide context for future requests, enabling more coherent and personalized responses. For example:
+
+- The router node uses the summary to better understand the context of ambiguous requests
+- The chat node includes the summary in its prompt to maintain conversation continuity
+- The symbol extraction node can fall back to previously mentioned symbols when none are explicitly mentioned
 
 ## Error Handling
 
@@ -193,18 +225,23 @@ The application is designed to be easily testable:
 
 1. **Unit Tests**:
    - Test individual components (MemoryManager, chains, nodes)
-   - Use the actual MemoryManager class (no mocking needed)
+   - Use the actual MemoryManager class (no mocking needed) since it's a standalone class
+   - Use pytest's built-in mocking capabilities for LLMs and chains
    - Verify that memory operations work correctly
+   - Test that nodes correctly access and update memory
 
 2. **Integration Tests**:
    - Test the complete workflow
+   - Use mock LLMs that implement the Runnable interface
    - Verify that nodes interact correctly
    - Ensure that memory is properly maintained across requests
+   - Test that user_id is correctly passed through the config
 
 3. **End-to-End Tests**:
    - Test the application with real LLMs
    - Verify that the user experience works as expected
    - Ensure that memory persists across different sessions
+   - Test realistic conversation scenarios with follow-up questions
 
 ## Conclusion
 
