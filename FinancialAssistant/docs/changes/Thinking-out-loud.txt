@@ -1,0 +1,62 @@
+we are going to add functionality/features  to the app.
+new features cross langgraph execution memory
+i.e. every node of the graph in the app  will have accees to it
+read langgraph documentation in @documentation/langgraph-llms-full.txt
+read langchain documentation in @documentation/langchain_llms.txt
+Let's make detailed plan how to implement it
+plan save to @docs/changes/cross-thread-memory/cross-thread-memory-plan.md
+====================
+we will use only inMemory object aka InMemoryStore, no database. for reference of InMemoryStore
+take a look at langchain-ai-langchain-academy.txt module-5/memory_store.ipynb
+We will need to modify memory prompt to store summary of conversation
+How to make summary look at module-2/chatbot-summarization.ipynb in langchain-ai-langchain-academy.txt
+=========================
+we do not need vector store, remove any code assocciated with it
+we do not need frequently_used_symbols, company_history and user_preferences we only need past interactions
+cross_thread_memory should not be in GraphState all cross memmory things will be in InMemoryStore, at node level it needs to be retrieved from config
+look at "module-5/memory_store.ipynb" in langchain-ai-langchain-academy.txt:
+```python
+ # Get the user ID from the config
+    user_id = config["configurable"]["user_id"]
+
+    # Retrieve memory from the store
+    namespace = ("memory", user_id)
+    key = "user_memory"
+    existing_memory = store.get(namespace, key)
+```
+
+You do not need "Memory Access Nodes" per above about access memory
+===================
+
+1. We are not changing GraphState, it stays as is
+2. Memory Manager should inherit from InMemoryStore and encapsulate all the management/access:
+2.1. **put**: Save an object to the store by namespace and key
+   ```python
+   # Save a memory to namespace as key and value
+   namespace = (user_id, "memories")
+   key = "user_memory"
+   value = {"conversation_summary": "User asked about Apple stock price"}
+   store.put(namespace, key, value)
+   ```
+
+2.2. **get**: Retrieve an object by namespace and key
+   ```python
+   memory = store.get(namespace, key)
+   ```
+
+2.3. **search**: Retrieve objects from the store by namespace
+   ```python
+   memories = store.search(namespace)
+   ```
+It should store summary and last symbol used
+
+3. Summarization should be last node before final node in order to include all messages from the run
+4. Summarization node should use chain as other nodes have their own chain, see @documentation/langchain-ai-langchain.txt how to make chain
+5. memory manager should update summary after summarization
+6. SymbolExtractionReport and SymbolExtractionAlone should retrieve last symbol from memory manager if they can not extract symbol
+7. Router node should use summary from memmory manager in its prompt to have context to determine user's intention.
+8.Clean up the file from unneccessary code and info
+
+
+
+

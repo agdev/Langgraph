@@ -149,7 +149,8 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
 
            # If symbol is unknown, try to get the last used symbol
            if symbol == "UNKNOWN":
-               last_symbol = memory_manager.get_last_symbol(user_id)
+               # Use the store parameter which is the memory manager
+               last_symbol = store.get_last_symbol(user_id)
                if last_symbol:
                    symbol = last_symbol
 
@@ -160,22 +161,22 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
 3. **Update Router Node**:
    ```python
    def create_get_route_node(llm, memory_manager):
+       # First, we need to update the route_chain.py to accept a conversation_summary parameter
+       # Update the RouteResult class and prompt in route_chain.py
        chain = create_route_chain(llm)
 
        def get_route_node(state: GraphState, config: RunnableConfig, store: BaseStore):
            # Get the user ID from the config
            user_id = config["configurable"]["user_id"]
 
-           # Get conversation summary
-           summary = memory_manager.get_conversation_summary(user_id) or ""
+           # Get conversation summary using the store parameter
+           summary = store.get_conversation_summary(user_id) or ""
 
-           # Create a context-enhanced request
-           context_request = state["request"]
-           if summary:
-               context_request = f"Context from previous conversations: {summary}\n\nCurrent request: {state['request']}"
-
-           # Invoke the routing chain with the enhanced context
-           result = chain.invoke({"request": context_request})
+           # Pass the summary as a separate property
+           result = chain.invoke({
+               "request": state["request"],
+               "conversation_summary": summary
+           })
 
            return {"request_category": result.route}
        return get_route_node
@@ -184,22 +185,22 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
 4. **Update Chat Node**:
    ```python
    def create_chat_node(llm, memory_manager):
+       # First, we need to update the chat_chain.py to accept a conversation_summary parameter
+       # Update the ChatPromptTemplate in chat_chain.py
        chain = create_chat_chain(llm)
 
        def chat_node(state: GraphState, config: RunnableConfig, store: BaseStore):
            # Get the user ID from the config
            user_id = config["configurable"]["user_id"]
 
-           # Get conversation summary
-           summary = memory_manager.get_conversation_summary(user_id) or ""
+           # Get conversation summary using the store parameter
+           summary = store.get_conversation_summary(user_id) or ""
 
-           # Create a context-enhanced request
-           context_request = state["request"]
-           if summary:
-               context_request = f"Context from previous conversations: {summary}\n\nCurrent request: {state['request']}"
-
-           # Invoke the chat chain with the enhanced context
-           result = chain.invoke({"request": context_request})
+           # Pass the summary as a separate property
+           result = chain.invoke({
+               "request": state["request"],
+               "conversation_summary": summary
+           })
 
            return {"chat_response": result.response}
        return chat_node
@@ -214,40 +215,41 @@ Modify the existing Langgraph workflow to incorporate the cross-thread memory:
 We will create a summarization chain to generate and update conversation summaries. This chain will be used by a dedicated summarization node that will be the last node before the final answer node:
 
 ```python
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
 
+class SummarizationResult(BaseModel):
+    """
+    The result of the summarization chain.
+    """
+    summary: str = Field(description="Summarized conversation")
+
 def create_summarization_chain(llm):
     """
-    Creates a chain for summarizing conversations.
+    Creates a chain for summarizing conversations using the modern chain approach.
     """
-    summarization_template = """
+    system_template = """
     You are an AI assistant tasked with summarizing financial conversations.
 
-    {existing_summary_prefix}:
-    {existing_summary}
-
-    Conversation:
-    {conversation}
-
-    Based on the conversation above and any existing summary, create a concise summary
+    Based on the conversation and any existing summary, create a concise summary
     that captures the key points of the conversation, focusing on:
     - Financial questions asked by the user
     - Specific companies or symbols mentioned
     - Types of financial information requested (stock prices, income statements, etc.)
     - Any preferences expressed by the user
-
-    Summary:
     """
 
-    prompt = PromptTemplate(
-        input_variables=["existing_summary", "existing_summary_prefix", "conversation"],
-        template=summarization_template
+    summarization_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_template),
+            ("human", "Previous summary: {existing_summary}\n\nConversation: {conversation}\n\nPlease provide an updated summary.")
+        ]
     )
 
-    return LLMChain(llm=llm, prompt=prompt)
+    # Create the chain using the pipe operator
+    return summarization_prompt | llm.with_structured_output(SummarizationResult)
 
 def summarize_conversation_node(state: GraphState, config: RunnableConfig, store: BaseStore, summarization_chain):
     """
@@ -261,7 +263,7 @@ def summarize_conversation_node(state: GraphState, config: RunnableConfig, store
     memory_manager = store
 
     # Get existing summary
-    existing_summary = memory_manager.get_conversation_summary(user_id) or ""
+    existing_summary = memory_manager.get_conversation_summary(user_id) or "No previous summary available."
 
     # Format the conversation for summarization
     conversation = f"User: {state['request']}\nAssistant: {state['final_answer']}"
@@ -269,13 +271,12 @@ def summarize_conversation_node(state: GraphState, config: RunnableConfig, store
     # Prepare inputs for the summarization chain
     chain_inputs = {
         "existing_summary": existing_summary,
-        "existing_summary_prefix": "Previous conversation summary" if existing_summary else "No previous summary",
         "conversation": conversation
     }
 
     # Generate the summary
     result = summarization_chain.invoke(chain_inputs)
-    summary = result["text"]
+    summary = result.summary
 
     # Update the summary in memory
     memory_manager.update_conversation_summary(user_id, summary)
@@ -377,50 +378,121 @@ class MemoryManager(InMemoryStore):
         self.put(namespace, key, {"symbol": symbol})
 ```
 
-### 6.2 Create summarization_chain.py
+### 6.2 Update route_chain.py
 
 ```python
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+
+class RouteResult(BaseModel):
+    """
+    The result of the route chain.
+    """
+    route: str = Field(description="The route to take")
+
+system_route = """
+    You are a helpful assistant that routes user requests to the appropriate category.
+
+    If the user is asking about a company's stock price, price-to-earnings ratio, or other stock metrics, route to 'stock_price'.
+    If the user is asking about a company's income statement, revenue, profit, or earnings, route to 'income_statement'.
+    If the user is asking about a company's general information, industry, or overview, route to 'company_financials'.
+    If the user is asking for a comprehensive report on a company, route to 'report'.
+    If the user is asking a general question not related to specific financial data, route to 'chat'.
+
+    If there is a conversation summary available, use it to provide context for understanding the user's request.
+"""
+
+route_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_route),
+        ("human", "Conversation summary: {conversation_summary}\n\nUser request: {request}\n\nWhat category should this request be routed to?")
+    ]
+)
+
+def create_route_chain(llm):
+    """
+    Creates a route chain using the given LLM.
+    """
+    return route_prompt | llm.with_structured_output(RouteResult)
+```
+
+### 6.3 Update chat_chain.py
+
+```python
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+
+class ChatResult(BaseModel):
+    """
+    The result of the chat chain.
+    """
+    response: str = Field(description="LLM's response")
+
+system_chat = """
+    You are a very helpful Assistant, you are to answer user's request to the best of your ability. If you do not know, respond with 'I do not know'.
+
+    If there is a conversation summary available, use it to provide context for understanding the user's request and to maintain continuity in the conversation.
+"""
+
+chat_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_chat),
+        ("human", "Conversation summary: {conversation_summary}\n\nUser request: {request}")
+    ]
+)
+
+def create_chat_chain(llm):
+    """
+    Creates a chat chain using the given LLM.
+    """
+    return chat_prompt | llm.with_structured_output(ChatResult)
+```
+
+### 6.4 Create summarization_chain.py
+
+```python
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+
+class SummarizationResult(BaseModel):
+    """
+    The result of the summarization chain.
+    """
+    summary: str = Field(description="Summarized conversation")
 
 def create_summarization_chain(llm):
     """
-    Creates a chain for summarizing conversations.
+    Creates a chain for summarizing conversations using the modern chain approach.
     """
-    summarization_template = """
+    system_template = """
     You are an AI assistant tasked with summarizing financial conversations.
 
-    {existing_summary_prefix}:
-    {existing_summary}
-
-    Conversation:
-    {conversation}
-
-    Based on the conversation above and any existing summary, create a concise summary
+    Based on the conversation and any existing summary, create a concise summary
     that captures the key points of the conversation, focusing on:
     - Financial questions asked by the user
     - Specific companies or symbols mentioned
     - Types of financial information requested (stock prices, income statements, etc.)
     - Any preferences expressed by the user
-
-    Summary:
     """
 
-    prompt = PromptTemplate(
-        input_variables=["existing_summary", "existing_summary_prefix", "conversation"],
-        template=summarization_template
+    summarization_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_template),
+            ("human", "Previous summary: {existing_summary}\n\nConversation: {conversation}\n\nPlease provide an updated summary.")
+        ]
     )
 
-    return LLMChain(llm=llm, prompt=prompt)
+    # Create the chain using the pipe operator
+    return summarization_prompt | llm.with_structured_output(SummarizationResult)
 ```
 
-### 6.3 Create summarization_node.py
+### 6.5 Create summarization_node.py
 
 ```python
 from graph.graph_state import GraphState
 from methods.memory_manager import MemoryManager
 from chains.summarization_chain import create_summarization_chain
-from langgraph_core.runnables.config import RunnableConfig
+from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
 
 def create_summarization_node(llm, memory_manager):
@@ -438,8 +510,8 @@ def create_summarization_node(llm, memory_manager):
         # Get the user ID from the config
         user_id = config["configurable"]["user_id"]
 
-        # Get existing summary
-        existing_summary = memory_manager.get_conversation_summary(user_id) or ""
+        # Get existing summary using the store parameter
+        existing_summary = store.get_conversation_summary(user_id) or "No previous summary available."
 
         # Format the conversation for summarization
         conversation = f"User: {state['request']}\nAssistant: {state['final_answer']}"
@@ -447,20 +519,19 @@ def create_summarization_node(llm, memory_manager):
         # Prepare inputs for the summarization chain
         chain_inputs = {
             "existing_summary": existing_summary,
-            "existing_summary_prefix": "Previous conversation summary" if existing_summary else "No previous summary",
             "conversation": conversation
         }
 
         # Generate the summary
         result = summarization_chain.invoke(chain_inputs)
-        summary = result["text"]
+        summary = result.summary
 
-        # Update the summary in memory
-        memory_manager.update_conversation_summary(user_id, summary)
+        # Update the summary in memory using the store parameter
+        store.update_conversation_summary(user_id, summary)
 
-        # If there's a symbol in the state, update the last symbol
+        # If there's a symbol in the state, update the last symbol using the store parameter
         if state.get("symbol") and state["symbol"] != "UNKNOWN":
-            memory_manager.update_last_symbol(user_id, state["symbol"])
+            store.update_last_symbol(user_id, state["symbol"])
 
         # Return the state unchanged
         return state
@@ -562,20 +633,340 @@ def create_workflow(llm):
 
 ## 7. Testing Plan
 
-1. **Unit Tests**:
-   - Test MemoryManager functionality
-   - Test summarization chain
-   - Test symbol extraction with memory fallback
+### 7.1 Unit Tests
 
-2. **Integration Tests**:
-   - Test memory persistence across different sessions
-   - Test conversation summarization
-   - Test symbol recall functionality
+```python
+import pytest
+from unittest.mock import MagicMock, patch
+from methods.memory_manager import MemoryManager
+from chains.summarization_chain import create_summarization_chain, SummarizationResult
+from graph.summarization_node import create_summarization_node
+from graph.nodes import create_symbol_extraction_node, create_get_route_node, create_chat_node
+from graph.graph_state import GraphState
+from langchain_core.runnables.config import RunnableConfig
 
-3. **End-to-End Tests**:
-   - Test the complete workflow with memory integration
-   - Verify that past interactions influence current responses
-   - Ensure last symbol is properly used when needed
+# Fixtures
+@pytest.fixture
+def memory_manager():
+    return MemoryManager()
+
+@pytest.fixture
+def user_id():
+    return "test_user"
+
+@pytest.fixture
+def state_with_symbol():
+    return GraphState({
+        "request": "Tell me about Apple",
+        "final_answer": "Apple Inc. is a technology company that makes iPhones.",
+        "symbol": "AAPL"
+    })
+
+@pytest.fixture
+def state_without_symbol():
+    return GraphState({"request": "What's the latest on that tech company?"})
+
+@pytest.fixture
+def config():
+    return {"configurable": {"user_id": "test_user"}}
+
+@pytest.fixture
+def mock_llm():
+    return MagicMock()
+
+@pytest.fixture
+def mock_store():
+    store = MagicMock()
+    store.get_conversation_summary.return_value = "Previous summary"
+    store.get_last_symbol.return_value = "AAPL"
+    return store
+
+# Memory Manager Tests
+def test_get_conversation_summary_empty(memory_manager, user_id):
+    # Test getting a summary when none exists
+    summary = memory_manager.get_conversation_summary(user_id)
+    assert summary is None
+
+def test_update_and_get_conversation_summary(memory_manager, user_id):
+    # Test updating and then getting a summary
+    test_summary = "This is a test summary"
+    memory_manager.update_conversation_summary(user_id, test_summary)
+    summary = memory_manager.get_conversation_summary(user_id)
+    assert summary == test_summary
+
+def test_get_last_symbol_empty(memory_manager, user_id):
+    # Test getting a symbol when none exists
+    symbol = memory_manager.get_last_symbol(user_id)
+    assert symbol is None
+
+def test_update_and_get_last_symbol(memory_manager, user_id):
+    # Test updating and then getting a symbol
+    test_symbol = "AAPL"
+    memory_manager.update_last_symbol(user_id, test_symbol)
+    symbol = memory_manager.get_last_symbol(user_id)
+    assert symbol == test_symbol
+
+# Summarization Node Tests
+@pytest.fixture
+def mock_summarization_chain():
+    chain = MagicMock()
+    chain.invoke.return_value = SummarizationResult(summary="User asked about Apple Inc.")
+    return chain
+
+@pytest.fixture
+def summarization_node_factory(mock_llm, mock_summarization_chain):
+    with patch('chains.summarization_chain.create_summarization_chain', return_value=mock_summarization_chain):
+        yield create_summarization_node(mock_llm, MagicMock())
+
+def test_summarization_node(summarization_node_factory, state_with_symbol, config, mock_store):
+    # Call the node
+    result = summarization_node_factory(state_with_symbol, config, mock_store)
+
+    # Verify the chain was called with the right inputs
+    mock_store.get_conversation_summary.assert_called_once_with("test_user")
+
+    # Verify the store was updated
+    mock_store.update_conversation_summary.assert_called_once_with("test_user", "User asked about Apple Inc.")
+    mock_store.update_last_symbol.assert_called_once_with("test_user", "AAPL")
+
+    # Verify the state is unchanged
+    assert result == state_with_symbol
+
+# Symbol Extraction Node Tests
+@pytest.fixture
+def mock_extraction_chain():
+    chain = MagicMock()
+    result = MagicMock()
+    result.symbol = "UNKNOWN"  # Default to unknown, can be changed in tests
+    chain.invoke.return_value = result
+    return chain, result
+
+@pytest.fixture
+def symbol_extraction_node_factory(mock_llm, mock_extraction_chain):
+    chain, _ = mock_extraction_chain
+    with patch('chains.extraction_chain.create_extraction_chain', return_value=chain):
+        yield create_symbol_extraction_node(mock_llm, MagicMock())
+
+def test_symbol_extraction_with_fallback(symbol_extraction_node_factory, state_without_symbol, config, mock_store):
+    # Call the node
+    result = symbol_extraction_node_factory(state_without_symbol, config, mock_store)
+
+    # Verify the store was queried for the last symbol
+    mock_store.get_last_symbol.assert_called_once_with("test_user")
+
+    # Verify the result contains the fallback symbol
+    assert result["symbol"] == "AAPL"
+
+def test_symbol_extraction_without_fallback(symbol_extraction_node_factory, state_without_symbol, config, mock_extraction_chain):
+    # Set up the extraction chain to return a valid symbol
+    _, mock_result = mock_extraction_chain
+    mock_result.symbol = "MSFT"
+
+    # Create a store that won't be called
+    store = MagicMock()
+
+    # Call the node
+    result = symbol_extraction_node_factory(state_without_symbol, config, store)
+
+    # Verify the store was not queried for the last symbol
+    store.get_last_symbol.assert_not_called()
+
+    # Verify the result contains the extracted symbol
+    assert result["symbol"] == "MSFT"
+
+# Router Node Tests
+@pytest.fixture
+def router_state():
+    return GraphState({"request": "Tell me about Apple's stock price"})
+
+@pytest.fixture
+def mock_route_chain():
+    chain = MagicMock()
+    result = MagicMock()
+    result.route = "stock_price"
+    chain.invoke.return_value = result
+    return chain
+
+@pytest.fixture
+def router_node_factory(mock_llm, mock_route_chain):
+    with patch('chains.route_chain.create_route_chain', return_value=mock_route_chain):
+        yield create_get_route_node(mock_llm, MagicMock())
+
+def test_router_node_with_summary(router_node_factory, router_state, config, mock_store):
+    # Set up the store to return a specific summary
+    mock_store.get_conversation_summary.return_value = "User previously asked about Apple's financials."
+
+    # Call the node
+    result = router_node_factory(router_state, config, mock_store)
+
+    # Verify the store was queried for the conversation summary
+    mock_store.get_conversation_summary.assert_called_once_with("test_user")
+
+    # Verify the result contains the correct route
+    assert result["request_category"] == "stock_price"
+
+# Chat Node Tests
+@pytest.fixture
+def chat_state():
+    return GraphState({"request": "What's the best tech stock to buy?"})
+
+@pytest.fixture
+def mock_chat_chain():
+    chain = MagicMock()
+    result = MagicMock()
+    result.response = "It depends on your investment goals."
+    chain.invoke.return_value = result
+    return chain
+
+@pytest.fixture
+def chat_node_factory(mock_llm, mock_chat_chain):
+    with patch('chains.chat_chain.create_chat_chain', return_value=mock_chat_chain):
+        yield create_chat_node(mock_llm, MagicMock())
+
+def test_chat_node_with_summary(chat_node_factory, chat_state, config, mock_store):
+    # Set up the store to return a specific summary
+    mock_store.get_conversation_summary.return_value = "User previously asked about investment strategies."
+
+    # Call the node
+    result = chat_node_factory(chat_state, config, mock_store)
+
+    # Verify the store was queried for the conversation summary
+    mock_store.get_conversation_summary.assert_called_once_with("test_user")
+
+    # Verify the result contains the correct response
+    assert result["chat_response"] == "It depends on your investment goals."
+```
+
+### 7.2 Integration Tests
+
+```python
+import pytest
+from unittest.mock import MagicMock
+from methods.memory_manager import MemoryManager
+from graph.work_flow import create_workflow
+from langchain_core.language_models import BaseLLM
+
+class MockLLM(BaseLLM):
+    def __init__(self, responses):
+        super().__init__()
+        self.responses = responses
+        self.call_count = 0
+
+    def invoke(self, prompt, **kwargs):
+        response = self.responses[self.call_count % len(self.responses)]
+        self.call_count += 1
+        return response
+
+@pytest.fixture
+def mock_responses():
+    return {
+        "RouteResult": [{"route": "chat"}, {"route": "stock_price"}],
+        "Extraction": [{"symbol": "AAPL"}, {"symbol": "UNKNOWN"}],
+        "ChatResult": [{"response": "Apple is a technology company."}, {"response": "The stock price is high."}],
+        "SummarizationResult": [{"summary": "User asked about Apple."}, {"summary": "User asked about Apple and its stock price."}]
+    }
+
+@pytest.fixture
+def mock_llm(mock_responses):
+    llm = MagicMock()
+
+    def side_effect(cls):
+        class_name = cls.__name__
+        responses = mock_responses.get(class_name, ["Unknown response"])
+        return MockLLM(responses)
+
+    llm.with_structured_output.side_effect = side_effect
+    return llm
+
+@pytest.fixture
+def memory_manager():
+    return MemoryManager()
+
+@pytest.fixture
+def workflow(mock_llm, memory_manager):
+    return create_workflow(mock_llm)
+
+def test_workflow_with_memory(workflow, memory_manager):
+    # First request - should use the chat route
+    result1 = workflow.invoke({"request": "Tell me about Apple", "user_id": "test_user"})
+
+    # Verify the result
+    assert result1["request_category"] == "chat"
+    assert result1["chat_response"] == "Apple is a technology company."
+
+    # Verify the memory was updated
+    summary = memory_manager.get_conversation_summary("test_user")
+    assert summary == "User asked about Apple."
+
+    # Second request - should use the stock_price route and remember the symbol
+    result2 = workflow.invoke({"request": "What's the stock price?", "user_id": "test_user"})
+
+    # Verify the result
+    assert result2["request_category"] == "stock_price"
+    assert result2["symbol"] == "AAPL"  # Should use the remembered symbol
+
+    # Verify the memory was updated
+    summary = memory_manager.get_conversation_summary("test_user")
+    assert summary == "User asked about Apple and its stock price."
+```
+
+### 7.3 End-to-End Tests
+
+```python
+import pytest
+from methods.memory_manager import MemoryManager
+from graph.work_flow import create_workflow
+from langchain_openai import ChatOpenAI
+
+@pytest.fixture(scope="module")
+def real_llm():
+    # Use a real LLM for end-to-end tests
+    return ChatOpenAI()
+
+@pytest.fixture(scope="module")
+def memory_manager():
+    return MemoryManager()
+
+@pytest.fixture(scope="module")
+def workflow(real_llm, memory_manager):
+    return create_workflow(real_llm)
+
+@pytest.mark.e2e
+def test_conversation_summary_persistence(workflow, memory_manager):
+    # First request about a company
+    user_id = "e2e_test_user"
+    result1 = workflow.invoke({"request": "Tell me about Microsoft", "user_id": user_id})
+
+    # Verify a summary was created
+    summary1 = memory_manager.get_conversation_summary(user_id)
+    assert summary1 is not None
+    assert "Microsoft" in summary1
+
+    # Second request that doesn't mention the company
+    result2 = workflow.invoke({"request": "What's their stock price?", "user_id": user_id})
+
+    # Verify the symbol was remembered
+    assert result2["symbol"] == "MSFT"
+
+    # Verify the summary was updated
+    summary2 = memory_manager.get_conversation_summary(user_id)
+    assert summary2 is not None
+    assert summary2 != summary1  # Summary should have been updated
+    assert "stock price" in summary2.lower()
+
+@pytest.mark.e2e
+def test_router_with_context(workflow, memory_manager):
+    # First request about investments
+    user_id = "e2e_test_user2"
+    result1 = workflow.invoke({"request": "I'm interested in tech stocks", "user_id": user_id})
+
+    # Second request that's ambiguous but should be routed correctly with context
+    result2 = workflow.invoke({"request": "What do you recommend?", "user_id": user_id})
+
+    # Verify it was routed to chat (not something else) because of the context
+    assert result2["request_category"] == "chat"
+    assert "tech" in result2["chat_response"].lower() or "stock" in result2["chat_response"].lower()
+```
 
 ## 8. Conclusion
 
