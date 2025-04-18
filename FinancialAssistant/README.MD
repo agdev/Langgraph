@@ -21,6 +21,6 @@ A financial reporting system that intelligently gathers:
 3. Robust error handling for unknown companies
 4. LLM-provider agnostic architecture
 
-![graphical representation of agentic flow](financial_data_report_graph.png)
+![graphical representation of agentic flow](financial_asstant_graph.png)
 
 #FinancialTech #GenerativeAI #LLM #SoftwareEngineering #Innovation
