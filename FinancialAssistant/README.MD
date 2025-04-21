@@ -36,7 +36,7 @@ A sophisticated agentic system for financial data analysis, combining the power 
 6. **Summarization**: Creates and updates conversation summaries for context awareness
 
 ### Workflow
-![Financial Assistant Workflow](financial_data_report_graph.png)
+![Financial Assistant Workflow](financial_asstant_graph.png)
 
 ## 💡 How It Works
 
