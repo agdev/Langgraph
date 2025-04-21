@@ -49,7 +49,19 @@ def create_summarization_node(llm):
         # Format the conversation for summarization
         request = state.get('request', 'No request')
         final_answer = state.get('final_answer', 'No answer')
-        conversation = f"User: {request}\nAssistant: {final_answer}"
+        request_category = state.get('request_category', 'unknown')
+        symbol = state.get('symbol', 'UNKNOWN')
+
+        # Build a conversation string with metadata
+        conversation = f"User: {request}\n"
+        conversation += f"Request Type: {request_category.replace('_', ' ').title()}\n"
+
+        # Add symbol information if available and relevant
+        if symbol != 'UNKNOWN' and request_category != 'chat':
+            conversation += f"Company Symbol: {symbol}\n"
+
+        # Add the final answer which already contains all outputs
+        conversation += f"Assistant: {final_answer}\n"
 
         # Prepare inputs for the summarization chain
         chain_inputs = {
