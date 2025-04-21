@@ -12,86 +12,59 @@ from chains.summarization_chain import SummarizationResult
 from consts.consts import UNKNOWN
 
 
-from langchain_core.language_models.llms import BaseLLM
-from langchain_core.outputs import LLMResult, Generation
-from typing import Any, List
-from pydantic import PrivateAttr
-
-class MockLLM(BaseLLM):
-    """
-    A mock LLM that returns predefined responses based on the output class.
-    """
-    # Define model config to allow extra fields
-    model_config = {"extra": "allow"}
-
-    # Use private attributes for the responses and call count
-    _responses: List[Any] = PrivateAttr(default_factory=list)
-    _call_count: int = PrivateAttr(default=0)
-
-    def __init__(self, responses, **kwargs):
-        super().__init__(**kwargs)
-        self._responses = responses
-        self._call_count = 0
-
-    def _generate(self, prompts, stop=None, run_manager=None, **kwargs) -> LLMResult:
-        """Return a mock response."""
-        # We ignore the prompts and just return the next response
-        response = self._responses[self._call_count % len(self._responses)]
-        self._call_count += 1
-        # Return a dummy LLMResult
-        # For structured output, we need to return the actual object as JSON
-        if hasattr(response, 'model_dump_json'):
-            # For Pydantic models
-            text = response.model_dump_json()
-        else:
-            # Fallback
-            text = str(response)
-        return LLMResult(generations=[[Generation(text=text)]])
-
-    @property
-    def _llm_type(self) -> str:
-        """Return the type of LLM."""
-        return "mock"
-
-
 @pytest.fixture
-def mock_responses():
+def mock_llm(mocker):
     """
-    Creates mock responses for different chains.
+    Creates a mock LLM that returns appropriate responses for different chains.
     """
-    return {
-        "RouterResult": [
-            RouterResult(route="chat"),
-            RouterResult(route="stock_price")
-        ],
-        "Extraction": [
-            Extraction(symbol="AAPL"),
-            Extraction(symbol=UNKNOWN)
-        ],
-        "ChatResult": [
-            ChatResult(response="Apple is a technology company."),
-            ChatResult(response="The stock price is high.")
-        ],
-        "SummarizationResult": [
-            SummarizationResult(summary="User asked about Apple."),
-            SummarizationResult(summary="User asked about Apple and its stock price.")
-        ]
-    }
-
-
-@pytest.fixture
-def mock_llm(mocker, mock_responses):
-    """
-    Creates a mock LLM that returns different responses for different chains.
-    """
+    # Create the base mock LLM
     llm = mocker.Mock()
 
-    def side_effect(cls):
-        class_name = cls.__name__
-        responses = mock_responses.get(class_name, ["Unknown response"])
-        return MockLLM(responses)
+    # Create mocks for each structured output type
+    router_chain = mocker.Mock()
 
-    llm.with_structured_output.side_effect = side_effect
+    # Create actual RouterResult objects
+    result1 = RouterResult(route="chat")
+    result2 = RouterResult(route="stock_price")
+
+    # Configure the mock to return these objects
+    router_chain.invoke.side_effect = [result1, result2]
+
+    extraction_chain = mocker.Mock()
+    extraction_chain.invoke.side_effect = [
+        Extraction(symbol="AAPL"),
+        Extraction(symbol=UNKNOWN)
+    ]
+
+    chat_chain = mocker.Mock()
+    chat_chain.invoke.side_effect = [
+        ChatResult(response="Apple is a technology company."),
+        ChatResult(response="The stock price is high.")
+    ]
+
+    summarization_chain = mocker.Mock()
+    summarization_chain.invoke.side_effect = [
+        SummarizationResult(summary="User asked about Apple."),
+        SummarizationResult(summary="User asked about Apple and its stock price.")
+    ]
+
+    # Configure the with_structured_output method
+    def with_structured_output_side_effect(cls):
+        if cls.__name__ == "RouterResult":
+            return router_chain
+        elif cls.__name__ == "Extraction":
+            return extraction_chain
+        elif cls.__name__ == "ChatResult":
+            return chat_chain
+        elif cls.__name__ == "SummarizationResult":
+            return summarization_chain
+        else:
+            default_mock = mocker.Mock()
+            default_mock.invoke.return_value = "Unknown response"
+            return default_mock
+
+    llm.with_structured_output.side_effect = with_structured_output_side_effect
+
     return llm
 
 
