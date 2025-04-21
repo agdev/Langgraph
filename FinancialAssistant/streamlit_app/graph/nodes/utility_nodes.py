@@ -77,7 +77,7 @@ def final_answer_node(state: GraphState):
         if KEY_REPORT_MD in state:
             result_data = state.get(KEY_REPORT_MD) or ""
             symbol: str = state.get(KEY_SYMBOL) or UNKNOWN
-            result = f"# Report for ({symbol}) \\n" + result_data
+            result = f"# Report for ({symbol}) \n" + result_data
         elif KEY_ERROR in state:
             result = state[KEY_ERROR]
         else:

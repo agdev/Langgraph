@@ -4,7 +4,9 @@ Unit tests for the updated nodes (router, symbol extraction, and chat).
 
 import pytest
 from graph.graph_state import GraphState
-from graph.nodes import create_get_route_node, create_symbol_extraction_node, create_chat_node
+from graph.nodes.router_node import create_get_route_node
+from graph.nodes.extraction_node import create_symbol_extraction_node
+from graph.nodes.chat_node import create_chat_node
 from chains.route_chain import RouterResult
 from chains.extraction_chain import Extraction
 from chains.chat_chain import ChatResult
@@ -68,7 +70,7 @@ def test_router_node_with_summary(mocker, mock_llm, memory_manager, test_state_w
     Test that the router node uses the conversation summary.
     """
     # Patch the create_route_chain function
-    mocker.patch('graph.nodes.create_route_chain', return_value=mock_route_chain)
+    mocker.patch('graph.nodes.router_node.create_route_chain', return_value=mock_route_chain)
 
     # Create the node
     node = create_get_route_node(mock_llm)
@@ -114,7 +116,7 @@ def test_symbol_extraction_with_fallback(mocker, mock_llm, memory_manager, test_
     Test that the symbol extraction node uses the last symbol when extraction returns UNKNOWN.
     """
     # Patch the create_extraction_chain function
-    mocker.patch('graph.nodes.create_extraction_chain', return_value=mock_extraction_chain_unknown)
+    mocker.patch('graph.nodes.extraction_node.create_extraction_chain', return_value=mock_extraction_chain_unknown)
 
     # Create the node
     node = create_symbol_extraction_node(mock_llm)
@@ -131,7 +133,7 @@ def test_symbol_extraction_without_fallback(mocker, mock_llm, memory_manager, te
     Test that the symbol extraction node uses the extracted symbol when available.
     """
     # Patch the create_extraction_chain function
-    mocker.patch('graph.nodes.create_extraction_chain', return_value=mock_extraction_chain_with_symbol)
+    mocker.patch('graph.nodes.extraction_node.create_extraction_chain', return_value=mock_extraction_chain_with_symbol)
 
     # Create the node
     node = create_symbol_extraction_node(mock_llm)
@@ -160,7 +162,7 @@ def test_chat_node_with_summary(mocker, mock_llm, memory_manager, test_state_wit
     Test that the chat node uses the conversation summary.
     """
     # Patch the create_chat_chain function
-    mocker.patch('graph.nodes.create_chat_chain', return_value=mock_chat_chain)
+    mocker.patch('graph.nodes.chat_node.create_chat_chain', return_value=mock_chat_chain)
 
     # Create the node
     node = create_chat_node(mock_llm)
