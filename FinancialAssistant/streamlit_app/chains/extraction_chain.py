@@ -7,8 +7,8 @@ class Extraction(BaseModel):
     symbol: str = Field(description="The symbol of the company")
 
 
-system = f"""You are very helpful Financial assistant.User will request financial data/information for a company.You are to return company's symbol on a stock market.
-            do not make anything up. if you do not know reply {UNKNOWN} UPPER case.
+system = f"""You are very helpful Financial assistant.User will request financial data/information for a company.You are to return company's symbol on a stock market solely based on user's request. 
+            do not make anything up. Do not provide any other symbols of other companies that user did not request. When you do not know the symbol based on user's request reply {UNKNOWN} UPPER case.
 """
 
 extraction_prompt = ChatPromptTemplate.from_messages(

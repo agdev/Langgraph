@@ -12,7 +12,8 @@ PROVIDER_ANTHROPIC = "Anthropic"
 
 # Model names
 # MODEL_GROQ = "mixtral-8x7b-32768"
-MODEL_GROQ = "llama-3.1-8b-instant"
+# MODEL_GROQ = "llama-3.1-8b-instant"
+MODEL_GROQ = "llama-3.3-70b-versatile"
 MODEL_OPENAI = "gpt-4o-mini"
 MODEL_ANTHROPIC = "claude-3-sonnet-20240229"
 
