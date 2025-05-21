@@ -1,6 +1,6 @@
-# 🚀 Financial Assistant: Intelligent Financial Data Assitent with Cross-Thread Memory
+# 🚀 Financial Assistant: Intelligent Financial Data Assistant with Latest Advanced Features of Langgraph
 
-A sophisticated agentic system for financial data analysis, combining the power of LLMs, Langgraph orchestration, and real-time financial data APIs.
+A sophisticated agentic system for financial data analysis, combining the power of LLMs, Langgraph orchestration, dual-state architecture, and cross-thread memory persistence for truly contextual conversations.
 
 [Try it here](https://langgraph-sqtz5fcof3bdjce3w3gbun.streamlit.app/)
 
@@ -12,7 +12,8 @@ A sophisticated agentic system for financial data analysis, combining the power 
 - **Comprehensive Reporting**: Combines multiple data sources into coherent financial reports
 - **Multi-Provider Support**: Works with Groq, OpenAI, or Anthropic LLMs
 
-### New Features
+### Advanced Features
+- **Dual-State Architecture**: Separates external-facing and internal states for cleaner code organization
 - **Cross-Thread Memory Management**: Remembers companies and context between user interactions
 - **Conversation Summarization**: Maintains an evolving summary of the conversation history
 - **Symbol Persistence**: Remembers previously discussed stock symbols for more natural follow-up questions
@@ -35,6 +36,11 @@ A sophisticated agentic system for financial data analysis, combining the power 
 5. **Memory Manager**: Maintains conversation context across sessions
 6. **Summarization**: Creates and updates conversation summaries for context awareness
 
+### State Management
+- **GraphState (Outer)**: External-facing state for end-to-end workflow management
+- **InternalState (Inner)**: Internal state for node-to-node communication and data passing
+- **Memory Persistence**: Cross-thread state persistence using MemoryManager
+
 ### Workflow
 ![Financial Assistant Workflow](financial_asstant_graph.png)
 
@@ -46,6 +52,7 @@ A sophisticated agentic system for financial data analysis, combining the power 
 4. **Data Retrieval**: For financial requests, the system fetches the requested data from the Financial Modeling Prep API
 5. **Response Generation**: The system formats the data into a readable response or generates a comprehensive report
 6. **Memory Update**: The conversation is summarized and stored for future context
+7. **State Transition**: Data flows through the dual-state architecture (GraphState ↔ InternalState) for clean separation of concerns
 
 ## 🚀 Getting Started
 
@@ -82,14 +89,26 @@ A sophisticated agentic system for financial data analysis, combining the power 
    streamlit run app.py
    ```
 
-## 🧠 Memory Management System
+## 🧠 Dual-State Architecture
 
-The new memory management system enables:
+The new dual-state architecture provides several advantages:
+
+- **Clean Separation**: GraphState and InternalState provide a clear boundary between external and internal representations
+- **Type Safety**: Both state types are TypedDict implementations with defined attributes
+- **Maintainability**: Changes to internal state don't cascade to external interfaces
+- **Simplified Testing**: Easier to mock and test individual components with clearly defined state interfaces
+- **Focused Responsibilities**: Each state layer has a specific purpose and scope
+
+## 🔄 Memory Management System
+
+The memory management system enables:
 
 - **Continuity**: The assistant remembers your previous questions about specific companies
 - **Context Awareness**: Follow-up questions can reference previously discussed data
 - **Symbol Persistence**: Ask "What about their income statement?" after discussing a company
 - **Evolving Understanding**: The conversation summary adapts as you explore different financial topics
+- **Multi-User Support**: Isolated memory contexts for different users via user IDs
+- **Cross-Thread Persistence**: Memory persists between different conversation threads
 
 ## 🔍 Example Usage
 
