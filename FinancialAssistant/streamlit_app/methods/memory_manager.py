@@ -7,6 +7,7 @@ and last used symbols.
 """
 
 from typing import Optional
+from langgraph.store.base import Item
 from langgraph.store.memory import InMemoryStore
 
 
@@ -36,7 +37,7 @@ class MemoryManager(InMemoryStore):
         namespace = (user_id, "memories")
         key = "conversation_summary"
         try:
-            memory = self.get(namespace, key)
+            memory:Optional[Item] = self.get(namespace, key)
             return memory.value.get("summary", "")
         except:
             return None

@@ -8,7 +8,7 @@ from consts.consts import (
     NODE_COMPANY_FINANCIALS_STAND_ALONE, NODE_CHAT, NODE_FINAL_ANSWER, NODE_GENERATE_REPORT,
     NODE_SUMMARIZE  # Added summarize node constant
 )
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from graph.nodes import (
     get_income_statement_node, get_company_financials_node, get_stock_price_node,
     error_node, generate_markdown_report_node, is_there_symbol,
