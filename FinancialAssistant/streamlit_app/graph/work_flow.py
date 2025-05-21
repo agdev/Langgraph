@@ -95,7 +95,7 @@ def create_workflow(llm):
 
     # Compile with both within-thread and across-thread memory
     app = workflow.compile(checkpointer=within_thread_memory, store=memory_manager)
-    app.get_graph().draw_mermaid_png(output_file_path="financial_asstant_graph.png")
+    # app.get_graph().draw_mermaid_png(output_file_path="financial_asstant_graph.png")
     return app
 
 
