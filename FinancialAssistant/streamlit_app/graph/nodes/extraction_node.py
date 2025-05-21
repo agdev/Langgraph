@@ -4,7 +4,7 @@ Symbol extraction node for the Financial Assistant application.
 
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from chains.extraction_chain import Extraction, create_extraction_chain
 from methods.memory_manager import MemoryManager
 from consts.consts import UNKNOWN, KEY_SYMBOL

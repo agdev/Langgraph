@@ -3,7 +3,7 @@ Financial data nodes for the Financial Assistant application.
 """
 
 from langchain_core.runnables.config import RunnableConfig
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from classes.income_statement import IncomeStatement, get_income_statement
 from classes.company_financials import CompanyFinancials, get_company_financials
 from classes.stock_price import StockPrice, get_stock_price

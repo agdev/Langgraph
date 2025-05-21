@@ -2,7 +2,7 @@
 Report generation node for the Financial Assistant application.
 """
 
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from methods.generate_methods import generate_markdown_report
 from consts.consts import KEY_COMPANY_FINANCIALS, KEY_INCOME_STATEMENT, KEY_STOCK_PRICE, KEY_REPORT_MD
 

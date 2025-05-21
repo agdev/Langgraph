@@ -4,7 +4,7 @@ Router node for the Financial Assistant application.
 
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from chains.route_chain import RouterResult, create_route_chain
 from consts.consts import KEY_REQUEST_CATEGORY
 from methods.util import get_memory_manager, get_user_id

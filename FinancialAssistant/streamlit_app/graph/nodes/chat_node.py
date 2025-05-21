@@ -4,7 +4,7 @@ Chat node for the Financial Assistant application.
 
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from chains.chat_chain import ChatResult, create_chat_chain
 from consts.consts import KEY_REQUEST, KEY_CHAT_RESPONSE
 from methods.util import get_memory_manager, get_user_id

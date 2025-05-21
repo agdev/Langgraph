@@ -2,7 +2,7 @@
 Utility nodes for the Financial Assistant application.
 """
 
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from consts.consts import (
     UNKNOWN, KEY_SYMBOL, KEY_ERROR, KEY_REQUEST_CATEGORY, 
     KEY_INCOME_STATEMENT, KEY_COMPANY_FINANCIALS, KEY_STOCK_PRICE, 

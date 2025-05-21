@@ -6,7 +6,7 @@ in the Financial Assistant workflow.
 """
 
 from langgraph.store.base import BaseStore
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from chains.summarization_chain import create_summarization_chain
 from methods.memory_manager import MemoryManager
 from langchain_core.runnables.config import RunnableConfig
