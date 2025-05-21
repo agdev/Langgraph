@@ -3,7 +3,7 @@ Unit tests for the updated nodes (router, symbol extraction, and chat).
 """
 
 import pytest
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from graph.nodes.router_node import create_get_route_node
 from graph.nodes.extraction_node import create_symbol_extraction_node
 from graph.nodes.chat_node import create_chat_node
@@ -85,6 +85,7 @@ def test_router_node_with_summary(mocker, mock_llm, memory_manager, test_state_w
     assert call_args["conversation_summary"] == "Previous conversation about tech stocks"
 
     # Verify the result contains the correct route
+    assert "request_category" in result
     assert result["request_category"] == "stock_price"
 
 
@@ -125,6 +126,7 @@ def test_symbol_extraction_with_fallback(mocker, mock_llm, memory_manager, test_
     result = node(test_state_with_request, test_config, memory_manager)
 
     # Verify the result contains the fallback symbol
+    assert "symbol" in result
     assert result["symbol"] == "AAPL"
 
 
@@ -142,6 +144,7 @@ def test_symbol_extraction_without_fallback(mocker, mock_llm, memory_manager, te
     result = node(test_state_with_request, test_config, memory_manager)
 
     # Verify the result contains the extracted symbol
+    assert "symbol" in result
     assert result["symbol"] == "MSFT"
 
 
@@ -177,4 +180,5 @@ def test_chat_node_with_summary(mocker, mock_llm, memory_manager, test_state_wit
     assert call_args["conversation_summary"] == "Previous conversation about tech stocks"
 
     # Verify the result contains the correct response
+    assert "chat_response" in result
     assert result["chat_response"] == "This is a response that considers your previous questions about tech stocks."

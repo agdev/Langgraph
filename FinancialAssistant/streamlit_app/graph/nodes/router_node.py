@@ -5,6 +5,7 @@ Router node for the Financial Assistant application.
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
 from graph.state.graph_state import GraphState
+from graph.state.internal_state import InternalState
 from chains.route_chain import RouterResult, create_route_chain
 from consts.consts import KEY_REQUEST_CATEGORY
 from methods.util import get_memory_manager, get_user_id
@@ -13,7 +14,7 @@ def create_get_route_node(llm):
   print('create_get_route_node')
   chain = create_route_chain(llm)
 
-  def get_route_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+  def get_route_node(state: GraphState, config: RunnableConfig, store: BaseStore)->InternalState:
     print('router_node')
     print('State', state)
 

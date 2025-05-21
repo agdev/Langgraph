@@ -3,13 +3,14 @@ Utility nodes for the Financial Assistant application.
 """
 
 from graph.state.graph_state import GraphState
+from graph.state.internal_state import InternalState
 from consts.consts import (
     UNKNOWN, KEY_SYMBOL, KEY_ERROR, KEY_REQUEST_CATEGORY, 
     KEY_INCOME_STATEMENT, KEY_COMPANY_FINANCIALS, KEY_STOCK_PRICE, 
     KEY_CHAT_RESPONSE, KEY_REPORT_MD, KEY_FINAL_ANSWER
 )
 
-def error_node(state: GraphState):
+def error_node(state: InternalState)->InternalState:
     """
     Returns an error message if the symbol is unknown.
     """
@@ -18,7 +19,7 @@ def error_node(state: GraphState):
     Can not produce report for this symbol.
     """}
 
-def is_there_symbol(state: GraphState):
+def is_there_symbol(state: InternalState)-> bool:
     """
     Checks if the symbol is unknown.
     """
@@ -31,7 +32,7 @@ def is_there_symbol(state: GraphState):
 
     return True
 
-def where_to(state: GraphState):
+def where_to(state: GraphState) -> str | None:
     """Determines which path to take based on the request category."""
     category = state.get(KEY_REQUEST_CATEGORY)
     if category == 'report':
@@ -40,16 +41,19 @@ def where_to(state: GraphState):
         return 'chat'
     return 'alone'
 
-def where_to_alone(state: GraphState):
+def where_to_alone(state: InternalState)-> str | None:
     """Determines which standalone node to use."""
     symbol = state.get(KEY_SYMBOL, UNKNOWN)
     if symbol.upper() == UNKNOWN:
         return 'error'
     return state.get(KEY_REQUEST_CATEGORY)
 
-def final_answer_node(state: GraphState):
+def final_answer_node(state: InternalState)-> GraphState:
     """Generates the final answer based on the request category."""
+    print('final_answer_node')
+    print('State', state)
     category = state.get(KEY_REQUEST_CATEGORY)
+    result: str | None = ""
     if category == 'income_statement':
         if KEY_ERROR in state:
             result = state[KEY_ERROR]

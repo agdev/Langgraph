@@ -40,6 +40,8 @@ def create_summarization_node(llm):
         Returns:
             The unchanged state
         """
+        print('summarization_node')
+        print('State', state)
         # Get the user ID from the config if available
         user_id = get_user_id(config)
         mem_store = get_memory_manager(store)

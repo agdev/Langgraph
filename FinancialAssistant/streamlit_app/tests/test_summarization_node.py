@@ -3,7 +3,7 @@ Unit tests for the summarization node.
 """
 
 import pytest
-from graph.graph_state import GraphState
+from graph.state.graph_state import GraphState
 from graph.nodes.summarization_node import create_summarization_node
 from chains.summarization_chain import SummarizationResult
 

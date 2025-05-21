@@ -5,6 +5,7 @@ Symbol extraction node for the Financial Assistant application.
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
 from graph.state.graph_state import GraphState
+from graph.state.internal_state import InternalState
 from chains.extraction_chain import Extraction, create_extraction_chain
 from methods.memory_manager import MemoryManager
 from consts.consts import UNKNOWN, KEY_SYMBOL
@@ -13,7 +14,7 @@ from methods.util import get_memory_manager, get_user_id
 def create_symbol_extraction_node(llm):
   print('create_symbol_extraction_node')
   chain = create_extraction_chain(llm)
-  def symbol_extraction_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+  def symbol_extraction_node(state: GraphState, config: RunnableConfig, store: BaseStore)->InternalState:
     print('symbol_extraction_node')
     print('State', state)
     symbol = UNKNOWN

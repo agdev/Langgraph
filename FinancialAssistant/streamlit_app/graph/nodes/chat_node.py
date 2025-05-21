@@ -5,6 +5,7 @@ Chat node for the Financial Assistant application.
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.store.base import BaseStore
 from graph.state.graph_state import GraphState
+from graph.state.internal_state import InternalState
 from chains.chat_chain import ChatResult, create_chat_chain
 from consts.consts import KEY_REQUEST, KEY_CHAT_RESPONSE
 from methods.util import get_memory_manager, get_user_id
@@ -12,7 +13,7 @@ from methods.util import get_memory_manager, get_user_id
 def create_chat_node(llm):
   print('create_chain_node')
   chain = create_chat_chain(llm)
-  def chat_node(state: GraphState, config: RunnableConfig, store: BaseStore):
+  def chat_node(state: GraphState, config: RunnableConfig, store: BaseStore)->InternalState:
       """
       Generates a response from llm per user request/prompt.
       """

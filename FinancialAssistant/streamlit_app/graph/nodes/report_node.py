@@ -3,12 +3,13 @@ Report generation node for the Financial Assistant application.
 """
 
 from graph.state.graph_state import GraphState
+from graph.state.internal_state import InternalState
 from methods.generate_methods import generate_markdown_report
 from consts.consts import KEY_COMPANY_FINANCIALS, KEY_INCOME_STATEMENT, KEY_STOCK_PRICE, KEY_REPORT_MD
 
-def generate_markdown_report_node(state: GraphState):
+def generate_markdown_report_node(state: InternalState)->InternalState:
     """
-    Generates a markdown report from the GraphState instance.
+    Generates a markdown report from the InternalState instance.
     """
     print('generate_markdown_report_node')
     company_financials = state[KEY_COMPANY_FINANCIALS] if KEY_COMPANY_FINANCIALS in state else None

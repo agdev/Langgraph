@@ -24,7 +24,7 @@ def create_workflow(llm):
     workflow = StateGraph(GraphState)
 
     # Add nodes to workflow
-    workflow.add_node(NODE_ROUTER, create_get_route_node(llm))#
+    workflow.add_node(NODE_ROUTER, create_get_route_node(llm),)
     workflow.add_node(NODE_SYMBOL_EXTRACTION_REPORT, create_symbol_extraction_node(llm))
     workflow.add_node(NODE_SYMBOL_EXTRACTION_ALONE, create_symbol_extraction_node(llm))
     workflow.add_node(NODE_CHAT, create_chat_node(llm))
@@ -95,7 +95,7 @@ def create_workflow(llm):
 
     # Compile with both within-thread and across-thread memory
     app = workflow.compile(checkpointer=within_thread_memory, store=memory_manager)
-    app.get_graph().draw_mermaid_png(output_file_path="financial_data_report_graph.png")
+    app.get_graph().draw_mermaid_png(output_file_path="financial_asstant_graph.png")
     return app
 
 

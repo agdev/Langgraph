@@ -24,6 +24,16 @@ class MemoryManager(InMemoryStore):
         """Initialize the MemoryManager with an InMemoryStore."""
         super().__init__()
     
+    def __get_key__(self, namespace: tuple[str,...], key: str, key_value: str) -> str | None:
+        
+        try:
+            memory: Item | None = self.get(namespace, key)
+            if memory is None:
+                return None
+            return memory.value.get(key_value, "")
+        except:
+            return None
+
     def get_conversation_summary(self, user_id: str) -> Optional[str]:
         """
         Retrieve the conversation summary for a user.
@@ -36,11 +46,7 @@ class MemoryManager(InMemoryStore):
         """
         namespace = (user_id, "memories")
         key = "conversation_summary"
-        try:
-            memory:Optional[Item] = self.get(namespace, key)
-            return memory.value.get("summary", "")
-        except:
-            return None
+        return self.__get_key__(namespace, key, "summary")
     
     def update_conversation_summary(self, user_id: str, summary: str) -> None:
         """
@@ -66,12 +72,8 @@ class MemoryManager(InMemoryStore):
         """
         namespace = (user_id, "memories")
         key = "last_symbol"
-        try:
-            memory = self.get(namespace, key)
-            return memory.value.get("symbol", "")
-        except:
-            return None
-    
+        return self.__get_key__(namespace, key, "symbol")   
+        
     def update_last_symbol(self, user_id: str, symbol: str) -> None:
         """
         Update the last used symbol for a user.

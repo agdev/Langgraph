@@ -1,4 +1,4 @@
-from typing import TypedDict, Any
+from typing import TypedDict, Any, Optional
 
 class GraphState(TypedDict, total=False):
   """
@@ -24,11 +24,11 @@ class GraphState(TypedDict, total=False):
   company_financials: str
   stock_price: str
   report_md: str
-  extraction_chain: Any
-  chat_chain: Any
+  # extraction_chain: Any
+  # chat_chain: Any
   error: str
   fmp_api_key: str
   request_category: str
   chat_response: str
-  final_answer: str
+  final_answer: Optional[str]
 
