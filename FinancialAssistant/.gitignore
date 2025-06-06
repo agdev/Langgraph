@@ -1,3 +1,4 @@
 
 documentation/
 **/__pycache__/
+.langgraph_api/

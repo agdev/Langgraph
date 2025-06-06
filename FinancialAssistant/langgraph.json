@@ -1,7 +1,7 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "agent": "./graph/work_flow.py:create_graph"
+    "agent": "./streamlit_app/graph/work_flow.py:create_graph"
   },
   "env": "./env/.env",
   "python_version": "3.11",

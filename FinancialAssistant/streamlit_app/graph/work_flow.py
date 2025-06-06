@@ -1,3 +1,16 @@
+import sys
+from pathlib import Path
+
+# Only add path manipulation for LangGraph server (not Streamlit Cloud)
+try:
+    # Test if we can import a local module
+    import consts.consts
+except ImportError:
+    # We're in LangGraph server context - add streamlit_app to Python path
+    current_dir = Path(__file__).parent
+    streamlit_app_dir = current_dir.parent
+    sys.path.insert(0, str(streamlit_app_dir))
+
 from langgraph.graph import END, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from consts.consts import (

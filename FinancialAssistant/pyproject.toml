@@ -33,5 +33,11 @@ dev = [
     "pre-commit",
 ]
 
+# Configure hatchling to include streamlit_app in the package
 [tool.hatch.build.targets.wheel]
-packages = ["FinancialAssistant"]
+include = [
+    "streamlit_app/",
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"." = "."
