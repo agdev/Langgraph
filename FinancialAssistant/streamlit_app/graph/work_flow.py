@@ -99,3 +99,43 @@ def create_workflow(llm):
     return app
 
 
+def _create_llm_for_server():
+    """Create LLM using existing config system for LangGraph server"""
+    from utils.config_loader import create_config_from_env
+    from methods.util import get_llm
+    import os
+    from consts.consts import PROVIDER_GROQ
+
+    # Try to get default provider from environment, fallback to Groq
+    default_provider = os.environ.get("LLM_PROVIDER", PROVIDER_GROQ)
+    
+    # Try each provider until we find one with valid keys
+    providers_to_try = [default_provider]
+    if default_provider != PROVIDER_GROQ:
+        providers_to_try.append(PROVIDER_GROQ)
+    if "OpenAI" not in providers_to_try:
+        providers_to_try.append("OpenAI")
+    if "Anthropic" not in providers_to_try:
+        providers_to_try.append("Anthropic")
+    
+    for provider in providers_to_try:
+        config = create_config_from_env(provider)
+        if config is not None:
+            print(f"Successfully loaded configuration for {provider}")
+            return get_llm(config)
+    
+    # If no provider worked, show helpful error message
+    raise ValueError(
+        "Could not find valid API keys for any LLM provider. "
+        "Please ensure you have set the required environment variables in your .env file:\n"
+        "- FINANCIAL_MODELING_PREP_API_KEY (required for all providers)\n"
+        "- At least one of: GROQ_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY\n"
+        "- Optionally set LLM_PROVIDER to specify which provider to use"
+    )
+
+
+# Entry point for LangGraph server
+def create_graph():
+    """Factory function for LangGraph server using existing config system"""
+    llm = _create_llm_for_server()
+    return create_workflow(llm)
