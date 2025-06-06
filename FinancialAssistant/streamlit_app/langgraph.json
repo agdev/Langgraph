@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "agent": "./streamlit_app/graph/work_flow.py:create_workflow"
+  },
+  "env": ".env",
+  "image_distro": "wolfi"
+}
