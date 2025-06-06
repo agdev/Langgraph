@@ -12,7 +12,7 @@ license = {text = "MIT"}
 dependencies = [
     "streamlit",
     "langchain",
-    "langgraph>=0.3.0",  # Updated to latest version
+    "langgraph>=0.3.0",
     "langchain-anthropic",
     "langchain-groq",
     "langchain-openai",
@@ -27,7 +27,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "debugpy",
+    "langgraph-cli",
+    "ruff",
+    "mypy",
+    "pre-commit",
 ]
 
-[tool.uv]
-default-groups = ["default"]
+[tool.hatch.build.targets.wheel]
+packages = ["FinancialAssistant"]
